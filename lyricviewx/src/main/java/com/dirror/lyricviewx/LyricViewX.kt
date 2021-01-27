@@ -21,7 +21,6 @@ import android.view.View
 import android.view.animation.LinearInterpolator
 import android.widget.Scroller
 import androidx.core.content.ContextCompat
-import com.dirror.lyricviewx.R
 import com.dirror.lyricviewx.LyricUtil.formatTime
 import com.dirror.lyricviewx.LyricUtil.getContentFromNetwork
 import com.dirror.lyricviewx.LyricUtil.resetDurationScale
