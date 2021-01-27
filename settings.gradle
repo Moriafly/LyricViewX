@@ -1,0 +1,3 @@
+include ':lyricviewx'
+include ':app'
+rootProject.name = "LyricViewX"
