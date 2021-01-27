@@ -1,5 +1,7 @@
 # LyricViewX
 
+[![](https://www.jitpack.io/v/Moriafly/LyricViewX.svg)](https://www.jitpack.io/#Moriafly/LyricViewX)
+
 LyricViewX is a view to show lyrics. It based on [LrcView](https://github.com/zion223/NeteaseCloudMusic-MVVM).
 
 ## What's new
@@ -22,7 +24,7 @@ allprojects {
 ### Step 2. Add the dependency
 ```
 dependencies {
-    implementation 'com.github.Moriafly:LyricViewX:1.0.0'
+    implementation 'com.github.Moriafly:LyricViewX:1.0.1'
 }
 ```
 
