@@ -155,6 +155,7 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
     }
 
     /**
+     * Sets the font color for lyrics that are not on the current line
      * 设置非当前行歌词字体颜色
      */
     fun setNormalColor(normalColor: Int) {

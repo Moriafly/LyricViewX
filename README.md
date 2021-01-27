@@ -13,10 +13,10 @@ LyricViewX is a view to show lyrics. It based on [LrcView](https://github.com/zi
 Add it in your root build.gradle at the end of repositories:
 ```
 allprojects {
-	repositories {
-		...
-		maven { url 'https://www.jitpack.io' }
-	}
+    repositories {
+        ...
+        maven { url 'https://www.jitpack.io' }
+    }
 }
 ```
 ### Step 2. Add the dependency
@@ -25,6 +25,12 @@ dependencies {
     implementation 'com.github.Moriafly:LyricViewX:1.0.0'
 }
 ```
+
+### APIs
+| Function | Descriptions |
+| ---      |    ---       |
+| setNormalColor() | Sets the font color for lyrics that are not on the current line |
+| ... | ... |
 
 ## License
 
