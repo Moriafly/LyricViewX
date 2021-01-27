@@ -9,7 +9,18 @@ LyricViewX is a view to show lyrics. It based on [LrcView](https://github.com/zi
 
 # How to use
 
-```groovy
+## Step 1. Add the JitPack repository to your build file
+Add it in your root build.gradle at the end of repositories:
+```
+allprojects {
+	repositories {
+		...
+		maven { url 'https://www.jitpack.io' }
+	}
+}
+```
+## Step 2. Add the dependency
+```
 dependencies {
     implementation 'com.github.Moriafly:LyricViewX:1.0.0'
 }
