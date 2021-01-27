@@ -29,8 +29,11 @@ dependencies {
 ### APIs
 | Function | Descriptions |
 | ---      |    ---       |
+| loadLrc() | |
 | setNormalColor() | Sets the font color for lyrics that are not on the current line |
 | ... | ... |
+
+
 
 ## License
 

@@ -44,13 +44,15 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
     View(context, attrs, defStyleAttr) {
 
     companion object {
+        // 调整时间
         private const val ADJUST_DURATION: Long = 100
+        // 时间线持续时间
         private const val TIMELINE_KEEP_TIME = 3 * DateUtils.SECOND_IN_MILLIS
     }
 
     private val lyricEntryList: MutableList<LyricEntry> = ArrayList() // 单句歌词集合
-    private val mLrcPaint = TextPaint() // 歌词画笔
-    private val mTimePaint = TextPaint() // 时间文字画笔
+    private val lyricPaint = TextPaint() // 歌词画笔
+    private val timePaint = TextPaint() // 时间文字画笔
     private var mTimeFontMetrics: Paint.FontMetrics? = null
     private var mPlayDrawable: Drawable? = null
     private var mDividerHeight = 0f
@@ -64,7 +66,7 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
     private var mTimeTextColor = 0
     private var mDrawableWidth = 0
     private var mTimeTextWidth = 0
-    private var mDefaultLabel: String? = null
+    private var mDefaultLabel: String = "暂无歌词"
     private var mLrcPadding = 0f
     private var mOnPlayClickListener: OnPlayClickListener? = null
     private var mOnSingerClickListener: OnSingleClickListener? = null
@@ -123,7 +125,7 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
             R.styleable.LrcView_lrcTimelineTextColor,
             ContextCompat.getColor(context, R.color.lrc_timeline_text_color)
         )
-        mDefaultLabel = ta.getString(R.styleable.LrcView_lrcLabel)
+        mDefaultLabel = ta.getString(R.styleable.LrcView_lrcLabel).toString()
         mDefaultLabel = if (TextUtils.isEmpty(mDefaultLabel)) "暂无歌词" else mDefaultLabel
         mLrcPadding = ta.getDimension(R.styleable.LrcView_lrcPadding, 0f)
         mTimelineColor =
@@ -140,15 +142,15 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
         ta.recycle()
         mDrawableWidth = resources.getDimension(R.dimen.lrc_drawable_width).toInt()
         mTimeTextWidth = resources.getDimension(R.dimen.lrc_time_width).toInt()
-        mLrcPaint.isAntiAlias = true
-        mLrcPaint.textSize = mCurrentTextSize
-        mLrcPaint.textAlign = Paint.Align.LEFT
-        mTimePaint.isAntiAlias = true
-        mTimePaint.textSize = timeTextSize
-        mTimePaint.textAlign = Paint.Align.CENTER
-        mTimePaint.strokeWidth = timelineHeight
-        mTimePaint.strokeCap = Paint.Cap.ROUND
-        mTimeFontMetrics = mTimePaint.fontMetrics
+        lyricPaint.isAntiAlias = true
+        lyricPaint.textSize = mCurrentTextSize
+        lyricPaint.textAlign = Paint.Align.LEFT
+        timePaint.isAntiAlias = true
+        timePaint.textSize = timeTextSize
+        timePaint.textAlign = Paint.Align.CENTER
+        timePaint.strokeWidth = timelineHeight
+        timePaint.strokeCap = Paint.Cap.ROUND
+        mTimeFontMetrics = timePaint.fontMetrics
         mGestureDetector = GestureDetector(context, mSimpleOnGestureListener)
         mGestureDetector!!.setIsLongpressEnabled(false)
         mScroller = Scroller(context)
@@ -211,7 +213,7 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
 
     /**
      * 设置歌词是否允许拖动
-     * @param draggable           是否允许拖动
+     * @param draggable 是否允许拖动
      * @param onPlayClickListener 设置歌词拖动后播放按钮点击监听器，如果允许拖动，则不能为 null
      */
     fun setDraggable(draggable: Boolean, onPlayClickListener: OnPlayClickListener?) {
@@ -228,9 +230,9 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
     }
 
     /**
-     * 设置歌词为空时屏幕中央显示的文字，如“暂无歌词”
+     * 设置歌词为空时屏幕中央显示的文字 [label]，如“暂无歌词”
      */
-    fun setLabel(label: String?) {
+    fun setLabel(label: String) {
         runOnUi {
             mDefaultLabel = label
             this@LyricViewX.invalidate()
@@ -239,18 +241,12 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
 
     /**
      * 加载歌词文件
-     * @param lrcFile 歌词文件
-     */
-    fun loadLrc(lrcFile: File) {
-        loadLrc(lrcFile, null)
-    }
-
-    /**
-     * 加载双语歌词文件，两种语言的歌词时间戳需要一致
+     * 两种语言的歌词时间戳需要一致
      * @param mainLrcFile   第一种语言歌词文件
-     * @param secondLrcFile 第二种语言歌词文件
+     * @param secondLrcFile 可选，第二种语言歌词文件
      */
-    private fun loadLrc(mainLrcFile: File, secondLrcFile: File?) {
+    @JvmOverloads
+    fun loadLrc(mainLrcFile: File, secondLrcFile: File? = null) {
         runOnUi {
             reset()
             val sb = StringBuilder("file://")
@@ -276,19 +272,12 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
     }
 
     /**
-     * 加载歌词文本
-     * @param lrcText 歌词文本
-     */
-    fun loadLrc(lrcText: String?) {
-        loadLrc(lrcText, null)
-    }
-
-    /**
      * 加载双语歌词文本，两种语言的歌词时间戳需要一致
      * @param mainLrcText   第一种语言歌词文本
      * @param secondLrcText 第二种语言歌词文本
      */
-    fun loadLrc(mainLrcText: String?, secondLrcText: String?) {
+    @JvmOverloads
+    fun loadLrc(mainLrcText: String?, secondLrcText: String? = null) {
         runOnUi {
             reset()
             val sb = StringBuilder("file://")
@@ -337,7 +326,6 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
 
     /**
      * 歌词是否有效
-     *
      * @return true，如果歌词有效，否则false
      */
     fun hasLrc(): Boolean {
@@ -350,16 +338,15 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
      */
     fun updateTime(time: Long) {
         runOnUi {
-            if (!hasLrc()) {
-                return@runOnUi
-            }
-            val line = findShowLine(time)
-            if (line != mCurrentLine) {
-                mCurrentLine = line
-                if (!isShowTimeline) {
-                    smoothScrollTo(line)
-                } else {
-                    this@LyricViewX.invalidate()
+            if (hasLrc()) {
+                val line = findShowLine(time)
+                if (line != mCurrentLine) {
+                    mCurrentLine = line
+                    if (!isShowTimeline) {
+                        smoothScrollTo(line)
+                    } else {
+                        this@LyricViewX.invalidate()
+                    }
                 }
             }
         }
@@ -376,35 +363,40 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
         }
     }
 
+    /**
+     * 绘制
+     */
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val centerY = height / 2
         // 无歌词
         if (!hasLrc()) {
-            mLrcPaint.color = mCurrentTextColor
-            @SuppressLint("DrawAllocation") val staticLayout = StaticLayout(
-                mDefaultLabel, mLrcPaint,
-                lrcWidth.toInt(), Layout.Alignment.ALIGN_CENTER, 1f, 0f, false
-            )
+            lyricPaint.color = mCurrentTextColor
+            val staticLayoutBuilder = StaticLayout.Builder
+                .obtain(mDefaultLabel, 0, mDefaultLabel.length, lyricPaint, lrcWidth.toInt())
+                .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .setLineSpacing(0f, 1f)
+                .setIncludePad(false)
+            val staticLayout = staticLayoutBuilder.build()
             drawText(canvas, staticLayout, centerY.toFloat())
             return
         }
         val centerLine = centerLine
         if (isShowTimeline) {
             mPlayDrawable!!.draw(canvas)
-            mTimePaint.color = mTimelineColor
+            timePaint.color = mTimelineColor
             canvas.drawLine(
                 mTimeTextWidth.toFloat(),
                 centerY.toFloat(),
                 (width - mTimeTextWidth).toFloat(),
                 centerY.toFloat(),
-                mTimePaint
+                timePaint
             )
-            mTimePaint.color = mTimeTextColor
+            timePaint.color = mTimeTextColor
             val timeText = formatTime(lyricEntryList[centerLine].time)
             val timeX = width - mTimeTextWidth.toFloat() / 2
             val timeY = centerY - (mTimeFontMetrics!!.descent + mTimeFontMetrics!!.ascent) / 2
-            canvas.drawText(timeText, timeX, timeY, mTimePaint)
+            canvas.drawText(timeText, timeX, timeY, timePaint)
         }
         canvas.translate(0f, mOffset)
         var y = 0f
@@ -413,13 +405,13 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
                 y += (lyricEntryList[i - 1].height + lyricEntryList[i].height shr 1) + mDividerHeight
             }
             if (i == mCurrentLine) {
-                mLrcPaint.textSize = mCurrentTextSize
-                mLrcPaint.color = mCurrentTextColor
+                lyricPaint.textSize = mCurrentTextSize
+                lyricPaint.color = mCurrentTextColor
             } else if (isShowTimeline && i == centerLine) {
-                mLrcPaint.color = mTimelineTextColor
+                lyricPaint.color = mTimelineTextColor
             } else {
-                mLrcPaint.textSize = mNormalTextSize
-                mLrcPaint.color = mNormalTextColor
+                lyricPaint.textSize = mNormalTextSize
+                lyricPaint.color = mNormalTextColor
             }
             lyricEntryList[i].staticLayout?.let {
                 drawText(canvas, it, y)
@@ -429,7 +421,6 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
 
     /**
      * 画一行歌词
-     *
      * @param y 歌词中心 Y 坐标
      */
     private fun drawText(canvas: Canvas, staticLayout: StaticLayout, y: Float) {
@@ -571,7 +562,7 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
             return
         }
         for (lrcEntry in lyricEntryList) {
-            lrcEntry.init(mLrcPaint, lrcWidth.toInt(), mTextGravity)
+            lrcEntry.init(lyricPaint, lrcWidth.toInt(), mTextGravity)
         }
         mOffset = height.toFloat() / 2
     }
