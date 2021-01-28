@@ -8,18 +8,18 @@ Based on [LrcView](https://github.com/zion223/NeteaseCloudMusic-MVVM) design.
 
 [中文点击这里](/README-zh-CN.md)
 
-## Compare with LRCView
+## Compare with LrcView
 
 - 100% Kotlin code
 - Interaction optimization, removing outdated methods
 - Provide the JitPack Library for easy use
 - Provide new functionality
 
-How to use ##
+## How to use 
 
 Step 1. Add the JitPack repository to the build file
-
 Add it to build.gradle(root) :
+
 ```
 allprojects {
     Repositories {
@@ -30,13 +30,14 @@ allprojects {
 ```
 
 Step 2. Add dependencies
+
 ```
 dependencies {
     Implementation 'com. Making. Moriafly: LyricViewX: 1.1.0'
 }
 ```
 
-### Functions
+## Functions
 ```kotlin
 /**
  * Set font color for non-current line lyrics [normalColor]
