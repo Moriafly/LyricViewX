@@ -2,136 +2,138 @@
 
 [![](https://www.jitpack.io/v/Moriafly/LyricViewX.svg)](https://www.jitpack.io/#Moriafly/LyricViewX)
 
-LyricViewX 是一个美观的安卓歌词控件。
+LyricViewX is a beautiful Lyrics control for Android.
 
-基于 [LrcView](https://github.com/zion223/NeteaseCloudMusic-MVVM) 设计。
+Based on [LrcView](https://github.com/zion223/NeteaseCloudMusic-MVVM) design.
 
-## 比较与 LrcView
+[中文](/README-zh-CN.md)
 
-- 100% Kotlin 代码
-- 交互优化，移除过时方法
-- 提供 JitPack 库方便使用
-- 提供新功能
+## Compare with LRCView
 
-## 如何使用
+- 100% Kotlin code
+- Interaction optimization, removing outdated methods
+- Provide the JitPack Library for easy use
+- Provide new functionality
 
-### 步骤 1. 将 JitPack 存储库添加到构建文件中
+How to use ##
 
-将它添加到 build.gradle(root) 中:
+Step 1. Add the JitPack repository to the build file
+
+Add it to build.gradle(root) :
 ```
 allprojects {
-    repositories {
+    Repositories {
         ...
-        maven { url 'https://www.jitpack.io' }
+        Maven {url 'https://www.jitpack.io'}
     }
 }
 ```
-### 步骤 2. 添加依赖关系
+
+Step 2. Add dependencies
 ```
 dependencies {
-    implementation 'com.github.Moriafly:LyricViewX:1.1.0'
-}
+    Implementation 'com. Making. Moriafly: LyricViewX: 1.1.0'
+    }
 ```
 
-### 方法
+### Functions
 ```kotlin
 /**
- * 设置非当前行歌词字体颜色 [normalColor]
+ * Set font color for non-current line lyrics [normalColor]
  */
 fun setNormalColor(normalColor: Int)
 
 /**
- * 普通歌词文本字体大小 [size]，单位 px
+ * font size of normal lyrics text [size], unit px
  */
 fun setNormalTextSize(size: Float)
 
 /**
- * 当前歌词文本字体大小
+ * Current text size of lyrics
  */
 fun setCurrentTextSize(size: Float)
 
 /**
- * 设置当前行歌词的字体颜色
+ * Sets the font color for the current line of lyrics
  */
 fun setCurrentColor(currentColor: Int)
 
 /**
- * 设置拖动歌词时选中歌词的字体颜色
+ * Sets the font color selected when dragging lyrics
  */
 fun setTimelineTextColor(timelineTextColor: Int)
 
 /**
- * 设置拖动歌词时时间线的颜色
+ * Sets the color of the timeline when dragging lyrics
  */
 fun setTimelineColor(timelineColor: Int)
 
 /**
- * 设置拖动歌词时右侧时间字体颜色
+ * Sets the font color to the right when dragging lyrics
  */
 fun setTimeTextColor(timeTextColor: Int)
 
 /**
- * 设置歌词为空时屏幕中央显示的文字 [label]，如“暂无歌词”
+ * Set lyrics to the text [label] displayed in the center of the screen when empty, such as "No lyrics yet".
  */
 fun setLabel(label: String)
 
 /**
- * 加载歌词文件
- * 两种语言的歌词时间戳需要一致
- * @param mainLyricFile 第一种语言歌词文件
- * @param secondLyricFile 可选，第二种语言歌词文件
+ * Load the lyrics file
+ * Lyric timestamps need to be consistent in both languages
+ * @param mainLyricFile First language lyrics file
+ * @param secondLyricFile Optional, second language song lyrics file
  */
 fun loadLyric(mainLyricFile: File, secondLyricFile: File? = null)
 
 /**
- * 加载歌词文本
- * 两种语言的歌词时间戳需要一致
- * @param mainLyricText 第一种语言歌词文本
- * @param secondLyricText 可选，第二种语言歌词文本
+ * Load the lyric text
+ * Lyric timestamps need to be consistent in both languages
+ * @param mainLyricText First language lyric text
+ * @Param secondLyricText optional, second language lyric text
  */
 fun loadLyric(mainLyricText: String?, secondLyricText: String? = null)
 
 /**
- * 加载在线歌词
- * @param lyricUrl  歌词文件的网络地址
- * @param charset 编码格式
+ * Load online lyrics
+ * @Param lyricUrl The web address of the lyrics file
+ * @param charset encoding format
  */
 fun loadLyricByUrl(lyricUrl: String, charset: String? = "utf-8")
 
 /**
- * 刷新歌词
- * @param time 当前播放时间
+ * Refresh lyrics
+ * @param time Current playback time
  */
 fun updateTime(time: Long)
 
 /**
- * 设置歌词是否允许拖动
- * @param draggable 是否允许拖动
- * @param onPlayClickListener 设置歌词拖动后播放按钮点击监听器，如果允许拖动，则不能为 null
+ * Sets whether dragging of lyrics is allowed
+ * @Param draggable whether dragging is allowed
+ * @Param onPlayClickListener sets lyrics drag after playback button click listener, if drag is allowed, it cannot be null
  */
 fun setDraggable(draggable: Boolean, onPlayClickListener: OnPlayClickListener?)
 
 /**
- * 设置单击
+ * Set click
  */
 fun setOnSingerClickListener(onSingerClickListener: OnSingleClickListener?)
 
 /**
- * @新增加
- * 获取当前歌词每句实体，可用于歌词分享
- * @return LyricEntry 集合
+ * @NewAdded
+ * Get the current lyrics of each line entity, can be used for lyrics sharing
+ * @Return LyricEntry collection
  */
 fun getLyricEntryList(): List<LyricEntry>
 
-
 /**
- * 播放按钮被点击，应该跳转到指定播放位置
- * @return 是否成功消费该事件，如果成功消费，则会更新UI
+ * When the play button is clicked, it should jump to the specified play position
+ * @return whether the event was successfully consumed, if so, the UI will be updated
  */
 fun onPlayClick(time: Long): Boolean
 
 /**
- * 单击事件
+ * Click events
  */
 fun onClick()
 
