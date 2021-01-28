@@ -6,7 +6,7 @@ LyricViewX is a beautiful Lyrics control for Android.
 
 Based on [LrcView](https://github.com/zion223/NeteaseCloudMusic-MVVM) design.
 
-[中文](/README-zh-CN.md)
+[中文点击这里](/README-zh-CN.md)
 
 ## Compare with LRCView
 
@@ -33,7 +33,7 @@ Step 2. Add dependencies
 ```
 dependencies {
     Implementation 'com. Making. Moriafly: LyricViewX: 1.1.0'
-    }
+}
 ```
 
 ### Functions
