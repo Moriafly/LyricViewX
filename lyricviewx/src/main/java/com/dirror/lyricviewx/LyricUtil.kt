@@ -93,15 +93,15 @@ internal object LyricUtil {
      * 从文本解析歌词
      */
     private fun parseLrc(lrcText: String): List<LyricEntry>? {
-        var lrcText = lrcText
-        if (TextUtils.isEmpty(lrcText)) {
+        var lyricText = lrcText
+        if (TextUtils.isEmpty(lyricText)) {
             return null
         }
-        if (lrcText.startsWith("\uFEFF")) {
-            lrcText = lrcText.replace("\uFEFF", "")
+        if (lyricText.startsWith("\uFEFF")) {
+            lyricText = lyricText.replace("\uFEFF", "")
         }
         val entryList: MutableList<LyricEntry> = ArrayList()
-        val array = lrcText.split("\\n".toRegex()).toTypedArray()
+        val array = lyricText.split("\\n".toRegex()).toTypedArray()
         for (line in array) {
             val list = parseLine(line)
             if (list != null && !list.isEmpty()) {
@@ -118,8 +118,8 @@ internal object LyricUtil {
     fun getContentFromNetwork(url: String?, charset: String?): String? {
         var lrcText: String? = null
         try {
-            val _url = URL(url)
-            val conn = _url.openConnection() as HttpURLConnection
+            val url = URL(url)
+            val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "GET"
             conn.connectTimeout = 10000
             conn.readTimeout = 10000
@@ -145,13 +145,13 @@ internal object LyricUtil {
      * 解析一行歌词
      */
     private fun parseLine(line: String): List<LyricEntry>? {
-        var line = line
-        if (TextUtils.isEmpty(line)) {
+        var lyricLine = line
+        if (TextUtils.isEmpty(lyricLine)) {
             return null
         }
-        line = line.trim { it <= ' ' }
+        lyricLine = lyricLine.trim { it <= ' ' }
         // [00:17.65]让我掉下眼泪的
-        val lineMatcher = PATTERN_LINE.matcher(line)
+        val lineMatcher = PATTERN_LINE.matcher(lyricLine)
         if (!lineMatcher.matches()) {
             return null
         }

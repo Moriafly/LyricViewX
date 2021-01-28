@@ -11,7 +11,6 @@ import android.os.Looper
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
-import android.text.TextUtils
 import android.text.format.DateUtils
 import android.util.AttributeSet
 import android.view.GestureDetector
@@ -26,6 +25,7 @@ import com.dirror.lyricviewx.LyricUtil.getContentFromNetwork
 import com.dirror.lyricviewx.LyricUtil.resetDurationScale
 import java.io.File
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.abs
 
 /**
@@ -41,7 +41,7 @@ import kotlin.math.abs
  */
 @SuppressLint("StaticFieldLeak")
 class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
-    View(context, attrs, defStyleAttr) {
+    View(context, attrs, defStyleAttr), LyricViewXInterface {
 
     companion object {
         // 调整时间
@@ -66,7 +66,7 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
     private var mTimeTextColor = 0
     private var mDrawableWidth = 0
     private var mTimeTextWidth = 0
-    private var mDefaultLabel: String = "暂无歌词"
+    private var mDefaultLabel: String? = null
     private var mLrcPadding = 0f
     private var mOnPlayClickListener: OnPlayClickListener? = null
     private var mOnSingerClickListener: OnSingleClickListener? = null
@@ -80,24 +80,6 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
     private var isTouching = false
     private var isFling = false
     private var mTextGravity = 0 // 歌词显示位置，靠左 / 居中 / 靠右
-
-    /**
-     * 播放按钮点击监听器，点击后应该跳转到指定播放位置
-     */
-    interface OnPlayClickListener {
-        /**
-         * 播放按钮被点击，应该跳转到指定播放位置
-         * @return 是否成功消费该事件，如果成功消费，则会更新UI
-         */
-        fun onPlayClick(time: Long): Boolean
-    }
-
-    /**
-     * 点击歌词布局
-     */
-    interface OnSingleClickListener {
-        fun onClick()
-    }
 
     @SuppressLint("CustomViewStyleable")
     private fun init(attrs: AttributeSet?) {
@@ -126,7 +108,11 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
             ContextCompat.getColor(context, R.color.lrc_timeline_text_color)
         )
         mDefaultLabel = ta.getString(R.styleable.LrcView_lrcLabel).toString()
-        mDefaultLabel = if (TextUtils.isEmpty(mDefaultLabel)) "暂无歌词" else mDefaultLabel
+        mDefaultLabel = if (mDefaultLabel.isNullOrEmpty()) {
+            "暂无歌词"
+        } else {
+            mDefaultLabel
+        }
         mLrcPadding = ta.getDimension(R.styleable.LrcView_lrcPadding, 0f)
         mTimelineColor =
             ta.getColor(R.styleable.LrcView_lrcTimelineColor, ContextCompat.getColor(context, R.color.lrc_timeline_color))
@@ -157,199 +143,11 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
     }
 
     /**
-     * Sets the font color for lyrics that are not on the current line
-     * 设置非当前行歌词字体颜色
-     */
-    fun setNormalColor(normalColor: Int) {
-        mNormalTextColor = normalColor
-        postInvalidate()
-    }
-
-    /**
-     * 普通歌词文本字体大小
-     */
-    fun setNormalTextSize(size: Float) {
-        mNormalTextSize = size
-    }
-
-    /**
-     * 当前歌词文本字体大小
-     */
-    fun setCurrentTextSize(size: Float) {
-        mCurrentTextSize = size
-    }
-
-    /**
-     * 设置当前行歌词的字体颜色
-     */
-    fun setCurrentColor(currentColor: Int) {
-        mCurrentTextColor = currentColor
-        postInvalidate()
-    }
-
-    /**
-     * 设置拖动歌词时选中歌词的字体颜色
-     */
-    fun setTimelineTextColor(timelineTextColor: Int) {
-        mTimelineTextColor = timelineTextColor
-        postInvalidate()
-    }
-
-    /**
-     * 设置拖动歌词时时间线的颜色
-     */
-    fun setTimelineColor(timelineColor: Int) {
-        mTimelineColor = timelineColor
-        postInvalidate()
-    }
-
-    /**
-     * 设置拖动歌词时右侧时间字体颜色
-     */
-    fun setTimeTextColor(timeTextColor: Int) {
-        mTimeTextColor = timeTextColor
-        postInvalidate()
-    }
-
-    /**
-     * 设置歌词是否允许拖动
-     * @param draggable 是否允许拖动
-     * @param onPlayClickListener 设置歌词拖动后播放按钮点击监听器，如果允许拖动，则不能为 null
-     */
-    fun setDraggable(draggable: Boolean, onPlayClickListener: OnPlayClickListener?) {
-        mOnPlayClickListener = if (draggable) {
-            requireNotNull(onPlayClickListener) { "if draggable == true, onPlayClickListener must not be null" }
-            onPlayClickListener
-        } else {
-            null
-        }
-    }
-
-    fun setOnSingerClickListener(mOnSingerClickListener: OnSingleClickListener?) {
-        this.mOnSingerClickListener = mOnSingerClickListener
-    }
-
-    /**
-     * 设置歌词为空时屏幕中央显示的文字 [label]，如“暂无歌词”
-     */
-    fun setLabel(label: String) {
-        runOnUi {
-            mDefaultLabel = label
-            this@LyricViewX.invalidate()
-        }
-    }
-
-    /**
-     * 加载歌词文件
-     * 两种语言的歌词时间戳需要一致
-     * @param mainLrcFile   第一种语言歌词文件
-     * @param secondLrcFile 可选，第二种语言歌词文件
-     */
-    @JvmOverloads
-    fun loadLrc(mainLrcFile: File, secondLrcFile: File? = null) {
-        runOnUi {
-            reset()
-            val sb = StringBuilder("file://")
-            sb.append(mainLrcFile.path)
-            if (secondLrcFile != null) {
-                sb.append("#").append(secondLrcFile.path)
-            }
-            val flag = sb.toString()
-            this@LyricViewX.flag = flag
-            object : AsyncTask<File?, Int?, List<LyricEntry>>() {
-                override fun onPostExecute(lrcEntries: List<LyricEntry>?) {
-                    if (flag === flag) {
-                        onLrcLoaded(lrcEntries)
-                        this@LyricViewX.flag = null
-                    }
-                }
-
-                override fun doInBackground(vararg params: File?): List<LyricEntry>? {
-                    return LyricUtil.parseLrc(params)
-                }
-            }.execute(mainLrcFile, secondLrcFile)
-        }
-    }
-
-    /**
-     * 加载双语歌词文本，两种语言的歌词时间戳需要一致
-     * @param mainLrcText   第一种语言歌词文本
-     * @param secondLrcText 第二种语言歌词文本
-     */
-    @JvmOverloads
-    fun loadLrc(mainLrcText: String?, secondLrcText: String? = null) {
-        runOnUi {
-            reset()
-            val sb = StringBuilder("file://")
-            sb.append(mainLrcText)
-            if (secondLrcText != null) {
-                sb.append("#").append(secondLrcText)
-            }
-            val flag = sb.toString()
-            this@LyricViewX.flag = flag
-            object : AsyncTask<String, Int, List<LyricEntry>>() {
-                override fun doInBackground(vararg params: String?): List<LyricEntry>? {
-                    return LyricUtil.parseLrc(params)
-                }
-
-                override fun onPostExecute(lrcEntries: List<LyricEntry>?) {
-                    if (flag === flag) {
-                        onLrcLoaded(lrcEntries)
-                        this@LyricViewX.flag = null
-                    }
-                }
-            }.execute(mainLrcText, secondLrcText)
-        }
-    }
-
-    /**
-     * 加载在线歌词
-     * @param lrcUrl  歌词文件的网络地址
-     * @param charset 编码格式
-     */
-    @JvmOverloads
-    fun loadLrcByUrl(lrcUrl: String, charset: String? = "utf-8") {
-        val flag = "url://$lrcUrl"
-        this.flag = flag
-        object : AsyncTask<String?, Int?, String?>() {
-            override fun onPostExecute(lrcText: String?) {
-                if (flag === flag) {
-                    loadLrc(lrcText)
-                }
-            }
-
-            override fun doInBackground(vararg params: String?): String? {
-                return getContentFromNetwork(params[0], params[1])
-            }
-        }.execute(lrcUrl, charset)
-    }
-
-    /**
      * 歌词是否有效
      * @return true，如果歌词有效，否则false
      */
-    fun hasLrc(): Boolean {
+    private fun hasLrc(): Boolean {
         return lyricEntryList.isNotEmpty()
-    }
-
-    /**
-     * 刷新歌词
-     * @param time 当前播放时间
-     */
-    fun updateTime(time: Long) {
-        runOnUi {
-            if (hasLrc()) {
-                val line = findShowLine(time)
-                if (line != mCurrentLine) {
-                    mCurrentLine = line
-                    if (!isShowTimeline) {
-                        smoothScrollTo(line)
-                    } else {
-                        this@LyricViewX.invalidate()
-                    }
-                }
-            }
-        }
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
@@ -373,7 +171,7 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
         if (!hasLrc()) {
             lyricPaint.color = mCurrentTextColor
             val staticLayoutBuilder = StaticLayout.Builder
-                .obtain(mDefaultLabel, 0, mDefaultLabel.length, lyricPaint, lrcWidth.toInt())
+                .obtain(mDefaultLabel!!, 0, mDefaultLabel!!.length, lyricPaint, lrcWidth.toInt())
                 .setAlignment(Layout.Alignment.ALIGN_CENTER)
                 .setLineSpacing(0f, 1f)
                 .setIncludePad(false)
@@ -686,6 +484,150 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
     // 放在最后，不要移动
     init {
         init(attrs)
+    }
+
+    /**
+     * 以下是公共部分
+     * 用法见接口 [LyricViewXInterface]
+     */
+
+    override fun setNormalColor(normalColor: Int) {
+        mNormalTextColor = normalColor
+        postInvalidate()
+    }
+
+    override fun setNormalTextSize(size: Float) {
+        mNormalTextSize = size
+    }
+
+    override fun setCurrentTextSize(size: Float) {
+        mCurrentTextSize = size
+    }
+
+    override fun setCurrentColor(currentColor: Int) {
+        mCurrentTextColor = currentColor
+        postInvalidate()
+    }
+
+    override fun setTimelineTextColor(timelineTextColor: Int) {
+        mTimelineTextColor = timelineTextColor
+        postInvalidate()
+    }
+
+    override fun setTimelineColor(timelineColor: Int) {
+        mTimelineColor = timelineColor
+        postInvalidate()
+    }
+
+    override fun setTimeTextColor(timeTextColor: Int) {
+        mTimeTextColor = timeTextColor
+        postInvalidate()
+    }
+
+    override fun setLabel(label: String) {
+        runOnUi {
+            mDefaultLabel = label
+            this@LyricViewX.invalidate()
+        }
+    }
+
+    override fun loadLyric(mainLyricFile: File, secondLyricFile: File?) {
+        runOnUi {
+            reset()
+            val sb = StringBuilder("file://")
+            sb.append(mainLyricFile.path)
+            if (secondLyricFile != null) {
+                sb.append("#").append(secondLyricFile.path)
+            }
+            val flag = sb.toString()
+            this@LyricViewX.flag = flag
+            object : AsyncTask<File?, Int?, List<LyricEntry>>() {
+                override fun onPostExecute(lrcEntries: List<LyricEntry>?) {
+                    if (flag === flag) {
+                        onLrcLoaded(lrcEntries)
+                        this@LyricViewX.flag = null
+                    }
+                }
+
+                override fun doInBackground(vararg params: File?): List<LyricEntry>? {
+                    return LyricUtil.parseLrc(params)
+                }
+            }.execute(mainLyricFile, secondLyricFile)
+        }
+    }
+
+    override fun loadLyric(mainLyricText: String?, secondLyricText: String?) {
+        runOnUi {
+            reset()
+            val sb = StringBuilder("file://")
+            sb.append(mainLyricText)
+            if (secondLyricText != null) {
+                sb.append("#").append(secondLyricText)
+            }
+            val flag = sb.toString()
+            this@LyricViewX.flag = flag
+            object : AsyncTask<String, Int, List<LyricEntry>>() {
+                override fun doInBackground(vararg params: String?): List<LyricEntry>? {
+                    return LyricUtil.parseLrc(params)
+                }
+
+                override fun onPostExecute(lrcEntries: List<LyricEntry>?) {
+                    if (flag === flag) {
+                        onLrcLoaded(lrcEntries)
+                        this@LyricViewX.flag = null
+                    }
+                }
+            }.execute(mainLyricText, secondLyricText)
+        }
+    }
+
+    override fun loadLyricByUrl(lyricUrl: String, charset: String?) {
+        val flag = "url://$lyricUrl"
+        this.flag = flag
+        object : AsyncTask<String?, Int?, String?>() {
+            override fun onPostExecute(lrcText: String?) {
+                if (flag === flag) {
+                    loadLyric(lrcText)
+                }
+            }
+
+            override fun doInBackground(vararg params: String?): String? {
+                return getContentFromNetwork(params[0], params[1])
+            }
+        }.execute(lyricUrl, charset)
+    }
+
+    override fun updateTime(time: Long) {
+        runOnUi {
+            if (hasLrc()) {
+                val line = findShowLine(time)
+                if (line != mCurrentLine) {
+                    mCurrentLine = line
+                    if (!isShowTimeline) {
+                        smoothScrollTo(line)
+                    } else {
+                        this@LyricViewX.invalidate()
+                    }
+                }
+            }
+        }
+    }
+
+    override fun setDraggable(draggable: Boolean, onPlayClickListener: OnPlayClickListener?) {
+        mOnPlayClickListener = if (draggable) {
+            requireNotNull(onPlayClickListener) { "if draggable == true, onPlayClickListener must not be null" }
+            onPlayClickListener
+        } else {
+            null
+        }
+    }
+
+    override fun setOnSingerClickListener(onSingerClickListener: OnSingleClickListener?) {
+        this.mOnSingerClickListener = onSingerClickListener
+    }
+
+    override fun getLyricEntryList(): List<LyricEntry> {
+        return lyricEntryList.toList()
     }
 
 }

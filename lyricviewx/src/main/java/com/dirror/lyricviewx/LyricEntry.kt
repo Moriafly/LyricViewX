@@ -7,15 +7,15 @@ import android.text.TextPaint
 /**
  * 一行歌词实体
  * @since 2021年1月19日09:51:40 Moriafly 基于 LrcEntry 改造，转换为 kt ，移除部分过时方法
- * @param time 时间
- * @param text 文本
+ * @param time 歌词时间
+ * @param text 歌词文本
  */
-internal class LyricEntry(val time: Long, val text: String) : Comparable<LyricEntry> {
+class LyricEntry(val time: Long, val text: String) : Comparable<LyricEntry> {
 
     companion object {
-        const val GRAVITY_CENTER = 0
-        const val GRAVITY_LEFT = 1
-        const val GRAVITY_RIGHT = 2
+        const val GRAVITY_CENTER = 0 // 居中
+        const val GRAVITY_LEFT = 1 // 左
+        const val GRAVITY_RIGHT = 2 // 右
     }
 
     /**
@@ -46,12 +46,16 @@ internal class LyricEntry(val time: Long, val text: String) : Comparable<LyricEn
 
     /**
      * 高度
+     * get 获取此句歌词高度
      */
     val height: Int
         get() = staticLayout?.height ?: 0
 
     /**
      * 初始化
+     * @param paint 文本画笔
+     * @param width 宽度
+     * @param gravity 位置
      */
     fun init(paint: TextPaint, width: Int, gravity: Int) {
         val align: Layout.Alignment = when (gravity) {
@@ -70,7 +74,9 @@ internal class LyricEntry(val time: Long, val text: String) : Comparable<LyricEn
     }
 
     /**
-     * 比较
+     * 继承 Comparable 比较
+     * @param other LyricEntry
+     * @return 时间差
      */
     override fun compareTo(other: LyricEntry): Int {
         return (time - other.time).toInt()
