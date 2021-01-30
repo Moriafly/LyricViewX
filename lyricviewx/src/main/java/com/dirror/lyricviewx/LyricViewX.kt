@@ -164,18 +164,26 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
     /**
      * 绘制
      */
+    @SuppressLint("DrawAllocation")
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val centerY = height / 2
         // 无歌词
         if (!hasLrc()) {
             lyricPaint.color = mCurrentTextColor
-            val staticLayoutBuilder = StaticLayout.Builder
-                .obtain(mDefaultLabel!!, 0, mDefaultLabel!!.length, lyricPaint, lrcWidth.toInt())
-                .setAlignment(Layout.Alignment.ALIGN_CENTER)
-                .setLineSpacing(0f, 1f)
-                .setIncludePad(false)
-            val staticLayout = staticLayoutBuilder.build()
+            val staticLayout = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                StaticLayout.Builder
+                    .obtain(mDefaultLabel!!, 0, mDefaultLabel!!.length, lyricPaint, lrcWidth.toInt())
+                    .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                    .setLineSpacing(0f, 1f)
+                    .setIncludePad(false)
+                    .build()
+            } else {
+                StaticLayout(
+                    mDefaultLabel, lyricPaint,
+                    lrcWidth.toInt(), Layout.Alignment.ALIGN_CENTER, 1f, 0f, false
+                )
+            }
             drawText(canvas, staticLayout, centerY.toFloat())
             return
         }

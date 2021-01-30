@@ -64,12 +64,18 @@ class LyricEntry(val time: Long, val text: String) : Comparable<LyricEntry> {
             GRAVITY_RIGHT -> Layout.Alignment.ALIGN_OPPOSITE
             else -> Layout.Alignment.ALIGN_CENTER
         }
-        val staticLayoutBuilder = StaticLayout.Builder
-            .obtain(showText, 0, showText.length, paint, width)
-            .setAlignment(align)
-            .setLineSpacing(0f, 1f)
-            .setIncludePad(false)
-        staticLayout = staticLayoutBuilder.build()
+        staticLayout =
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                StaticLayout.Builder
+                    .obtain(showText, 0, showText.length, paint, width)
+                    .setAlignment(align)
+                    .setLineSpacing(0f, 1f)
+                    .setIncludePad(false)
+                    .build()
+            } else {
+                StaticLayout(showText, paint, width, align, 1f, 0f, false)
+            }
+
         offset = Float.MIN_VALUE
     }
 
