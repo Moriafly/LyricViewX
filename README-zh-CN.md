@@ -29,7 +29,7 @@ allprojects {
 ### 步骤 2. 添加依赖关系
 ```
 dependencies {
-    implementation 'com.github.Moriafly:LyricViewX:1.1.0'
+    implementation 'com.github.Moriafly:LyricViewX:1.1.2'
 }
 ```
 

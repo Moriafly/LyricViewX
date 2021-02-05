@@ -33,7 +33,7 @@ Step 2. Add dependencies
 
 ```
 dependencies {
-    Implementation 'com. Making. Moriafly: LyricViewX: 1.1.0'
+    Implementation 'com.Making.Moriafly:LyricViewX:1.1.2'
 }
 ```
 
