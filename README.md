@@ -22,9 +22,9 @@ Add it to build.gradle(root) :
 
 ```
 allprojects {
-    Repositories {
+    repositories {
         ...
-        Maven {url 'https://www.jitpack.io'}
+        maven { url 'https://www.jitpack.io' }
     }
 }
 ```
@@ -33,7 +33,7 @@ Step 2. Add dependencies
 
 ```
 dependencies {
-    Implementation 'com.Making.Moriafly:LyricViewX:1.1.2'
+    implementation 'com.github.Moriafly:LyricViewX:1.1.3'
 }
 ```
 
