@@ -62,7 +62,7 @@ class LyricEntry(val time: Long, val text: String) : Comparable<LyricEntry> {
             GRAVITY_LEFT -> Layout.Alignment.ALIGN_NORMAL
             GRAVITY_CENTER -> Layout.Alignment.ALIGN_CENTER
             GRAVITY_RIGHT -> Layout.Alignment.ALIGN_OPPOSITE
-            else -> Layout.Alignment.ALIGN_CENTER
+            else -> Layout.Alignment.ALIGN_NORMAL
         }
         staticLayout =
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
