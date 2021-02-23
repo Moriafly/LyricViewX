@@ -394,7 +394,9 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
     }
 
     /**
-     * 滚动到某一行
+     * 平滑滚动到某一行
+     * @param line 行号
+     * @param duration 时长，0 就是马上滚动到
      */
     private fun smoothScrollTo(line: Int, duration: Long = mAnimationDuration) {
         val offset = getOffset(line)
@@ -636,6 +638,13 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
 
     override fun getLyricEntryList(): List<LyricEntry> {
         return lyricEntryList.toList()
+    }
+
+    override fun getCurrentLineLyricEntry(): LyricEntry? {
+        if (mCurrentLine <= lyricEntryList.lastIndex) {
+            return lyricEntryList[mCurrentLine]
+        }
+        return null
     }
 
 }

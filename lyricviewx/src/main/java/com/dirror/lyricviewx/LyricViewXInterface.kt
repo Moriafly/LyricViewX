@@ -98,6 +98,10 @@ interface LyricViewXInterface {
      */
     fun getLyricEntryList(): List<LyricEntry>
 
+    /**
+     * 获取当前行歌词
+     */
+    fun getCurrentLineLyricEntry(): LyricEntry?
 }
 
 /**
