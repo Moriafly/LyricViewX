@@ -4,7 +4,7 @@
 
 LyricViewX 是一个美观的安卓歌词控件。
 
-基于 [LrcView](https://github.com/zion223/NeteaseCloudMusic-MVVM) 设计。
+基于 [LrcView](https://github.com/zion223/NeteaseCloudMusic-MVVM/blob/master/lib_common_ui/src/main/java/com/netease/lib_common_ui/lrc/LrcView.java) 设计。
 
 ## 比较与 LrcView
 

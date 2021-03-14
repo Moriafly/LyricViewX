@@ -26,6 +26,7 @@ import com.dirror.lyricviewx.LyricUtil.resetDurationScale
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.concurrent.thread
 import kotlin.math.abs
 
 /**
@@ -576,18 +577,15 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
             }
             val flag = sb.toString()
             this@LyricViewX.flag = flag
-            object : AsyncTask<String, Int, List<LyricEntry>>() {
-                override fun doInBackground(vararg params: String?): List<LyricEntry>? {
-                    return LyricUtil.parseLrc(params)
-                }
-
-                override fun onPostExecute(lrcEntries: List<LyricEntry>?) {
+            thread {
+                val lrcEntries = LyricUtil.parseLrc(arrayOf(mainLyricText, secondLyricText))
+                runOnUi {
                     if (flag === flag) {
                         onLrcLoaded(lrcEntries)
                         this@LyricViewX.flag = null
                     }
                 }
-            }.execute(mainLyricText, secondLyricText)
+            }
         }
     }
 
@@ -638,6 +636,12 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
 
     override fun getLyricEntryList(): List<LyricEntry> {
         return lyricEntryList.toList()
+    }
+
+    override fun setLyricEntryList(newList: List<LyricEntry>) {
+        reset()
+        onLrcLoaded(newList)
+        this@LyricViewX.flag = null
     }
 
     override fun getCurrentLineLyricEntry(): LyricEntry? {

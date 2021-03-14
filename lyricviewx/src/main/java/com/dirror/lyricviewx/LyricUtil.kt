@@ -14,7 +14,7 @@ import java.util.regex.Pattern
  * 工具类
  * 原 LrcUtils 转 Kotlin
  */
-internal object LyricUtil {
+object LyricUtil {
     private val PATTERN_LINE = Pattern.compile("((\\[\\d\\d:\\d\\d\\.\\d{2,3}])+)(.+)")
     private val PATTERN_TIME = Pattern.compile("\\[(\\d\\d):(\\d\\d)\\.(\\d{2,3})]")
 
