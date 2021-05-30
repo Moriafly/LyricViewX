@@ -1,7 +1,6 @@
 package com.dirror.lyricviewx
 
 import android.animation.TimeInterpolator
-import android.util.Log
 
 /**
  * Salt Spring 动画插值器
@@ -43,7 +42,7 @@ internal class SaltSpringInterpolator(
                 * (-mDampedFreq * lastDisplacement * Math.sin((mDampedFreq * mDeltaT).toDouble())
                 + mDampedFreq * sinCoeff * Math.cos((mDampedFreq * mDeltaT).toDouble()))).toFloat()
         val mValue = displacement + endVal
-        Log.e("mValue", mValue.toString())
+        // Log.e("mValue", mValue.toString())
         return mValue
     }
 
