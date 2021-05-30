@@ -29,8 +29,23 @@ allprojects {
 ### 步骤 2. 添加依赖关系
 ```
 dependencies {
-    implementation 'com.github.Moriafly:LyricViewX:1.1.3'
+    implementation 'com.github.Moriafly:LyricViewX:#Tag' // $Tag 改成最新版本
 }
+```
+
+## 布局
+```xml
+<com.dirror.lyricviewx.LyricViewX
+    android:id="@+id/lyricViewX"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:lrcPadding="16dp">
+</com.dirror.lyricviewx.LyricViewX>
+```
+
+## Activity
+```kt
+    binding.lyricViewX.loadLyric()
 ```
 
 ### 方法

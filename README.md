@@ -33,8 +33,23 @@ Step 2. Add dependencies
 
 ```
 dependencies {
-    implementation 'com.github.Moriafly:LyricViewX:1.1.3'
+    implementation 'com.github.Moriafly:LyricViewX:#Tag' // replace $Tag with lastest version
 }
+```
+
+## In layout
+```xml
+<com.dirror.lyricviewx.LyricViewX
+    android:id="@+id/lyricViewX"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:lrcPadding="16dp">
+</com.dirror.lyricviewx.LyricViewX>
+```
+
+## In activity
+```kt
+    binding.lyricViewX.loadLyric()
 ```
 
 ## Functions

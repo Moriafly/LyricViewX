@@ -17,12 +17,10 @@ import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.view.View
-import android.view.animation.LinearInterpolator
 import android.widget.Scroller
 import androidx.core.content.ContextCompat
 import com.dirror.lyricviewx.LyricUtil.formatTime
 import com.dirror.lyricviewx.LyricUtil.getContentFromNetwork
-import com.dirror.lyricviewx.LyricUtil.resetDurationScale
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
@@ -30,15 +28,11 @@ import kotlin.concurrent.thread
 import kotlin.math.abs
 
 /**
- * LyricView 歌词控件
- * 基于 https://github.com/zion223/NeteaseCloudMusic-MVVM （十分感谢） Kotlin 重构
- * 优化代码，移除过时方法等
- * @修改 Moriafly
- * @since 2021年1月22日15:25:24
+ * LyricViewX
+ * Based on https://github.com/zion223/NeteaseCloudMusic-MVVM Kotlin 重构
  *
- * @param context 上下文
- * @param attrs 属性，默认 null
- * @param defStyleAttr 默认 0
+ * @change Moriafly
+ * @since 2021年1月22日15:25:24
  */
 @SuppressLint("StaticFieldLeak")
 class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSet? = null, defStyleAttr: Int = 0) :
@@ -404,12 +398,13 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
         endAnimation()
         animator = ValueAnimator.ofFloat(mOffset, offset).apply {
             setDuration(duration)
-            interpolator = LinearInterpolator()
+            // Salt Spring 插值器
+            interpolator = SaltSpringInterpolator(75F, 0.99F, 0F) // LinearInterpolator()
             addUpdateListener { animation: ValueAnimator ->
                 mOffset = animation.animatedValue as Float
                 this@LyricViewX.invalidate()
             }
-            resetDurationScale()
+            // resetDurationScale()
             start()
         }
     }

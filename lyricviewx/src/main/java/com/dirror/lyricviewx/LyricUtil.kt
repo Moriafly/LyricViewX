@@ -15,6 +15,7 @@ import java.util.regex.Pattern
  * 原 LrcUtils 转 Kotlin
  */
 object LyricUtil {
+
     private val PATTERN_LINE = Pattern.compile("((\\[\\d\\d:\\d\\d\\.\\d{2,3}])+)(.+)")
     private val PATTERN_TIME = Pattern.compile("\\[(\\d\\d):(\\d\\d)\\.(\\d{2,3})]")
 
@@ -187,6 +188,10 @@ object LyricUtil {
         return "$mm:$ss"
     }
 
+    /**
+     * BUG java.lang.NoSuchFieldException: No field sDurationScale in class Landroid/animation/ValueAnimator; #3
+     */
+    @Deprecated("")
     fun resetDurationScale() {
         try {
             val mField = ValueAnimator::class.java.getDeclaredField("sDurationScale")
