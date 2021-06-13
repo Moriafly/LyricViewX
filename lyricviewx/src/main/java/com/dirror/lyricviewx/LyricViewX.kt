@@ -399,7 +399,7 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
         animator = ValueAnimator.ofFloat(mOffset, offset).apply {
             setDuration(duration)
             // Salt Spring 插值器
-            interpolator = SaltSpringInterpolator(75F, 0.99F, 0F) // LinearInterpolator()
+            interpolator = SmoothInterpolator()
             addUpdateListener { animation: ValueAnimator ->
                 mOffset = animation.animatedValue as Float
                 this@LyricViewX.invalidate()

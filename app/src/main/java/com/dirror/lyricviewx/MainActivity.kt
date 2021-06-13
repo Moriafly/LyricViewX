@@ -1,5 +1,6 @@
 package com.dirror.lyricviewx
 
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 
@@ -60,7 +61,7 @@ class MainActivity : AppCompatActivity() {
             [03:52.07] 来不及来不及
             [03:56.69] 无人将你打捞起
             [04:01.39] 来不及来不及
-            [04:05.77]你明明讨厌窒息
+            [04:05.77] 你明明讨厌窒息
         """.trimIndent()
         lyricViewX.loadLyric(lyric)
         lyricViewX.setDraggable(true, object : OnPlayClickListener {
@@ -69,6 +70,8 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         })
+//        lyricViewX.setNormalColor(Color.rgb(255, 0, 0))
+//        lyricViewX.setNormalTextSize(18F)
     }
 
 
