@@ -17,6 +17,7 @@ import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import android.widget.Scroller
 import androidx.core.content.ContextCompat
 import com.dirror.lyricviewx.LyricUtil.formatTime
@@ -399,7 +400,7 @@ class LyricViewX @JvmOverloads constructor(context: Context?, attrs: AttributeSe
         animator = ValueAnimator.ofFloat(mOffset, offset).apply {
             setDuration(duration)
             // Salt Spring 插值器
-            interpolator = SmoothInterpolator()
+            interpolator = DecelerateInterpolator() // SmoothInterpolator()
             addUpdateListener { animation: ValueAnimator ->
                 mOffset = animation.animatedValue as Float
                 this@LyricViewX.invalidate()

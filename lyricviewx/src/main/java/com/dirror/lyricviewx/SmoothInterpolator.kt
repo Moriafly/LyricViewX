@@ -7,6 +7,7 @@ import kotlin.math.pow
  * Smooth 插值器
  * @author Moriafly
  */
+@Deprecated("过时")
 class SmoothInterpolator: TimeInterpolator {
 
     override fun getInterpolation(input: Float): Float {
