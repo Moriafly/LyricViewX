@@ -21,6 +21,7 @@
             <enum name="left" value="1" />
             <enum name="right" value="2" />
         </attr>
-        <attr name="lrcSecondTextScaleValue" format="float" />
+        <attr name="lrcTranslateTextScaleValue" format="float" />
+        <attr name="lrcHorizontalOffset" format="dimension" />
     </declare-styleable>
 </resources>

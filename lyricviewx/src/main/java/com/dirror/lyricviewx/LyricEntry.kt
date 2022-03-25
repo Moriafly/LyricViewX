@@ -14,10 +14,6 @@ import android.text.TextPaint
 class LyricEntry(val time: Long, val text: String) : Comparable<LyricEntry> {
 
     companion object {
-        const val GRAVITY_CENTER = 0 // 居中
-        const val GRAVITY_LEFT = 1 // 左
-        const val GRAVITY_RIGHT = 2 // 右
-
         fun createStaticLayout(
             text: String?,
             paint: TextPaint,
@@ -59,21 +55,15 @@ class LyricEntry(val time: Long, val text: String) : Comparable<LyricEntry> {
 
     /**
      * 初始化
-     * @param paint 文本画笔
+     * @param textPaint 文本画笔
      * @param width 宽度
-     * @param gravity 位置
+     * @param align 位置
      */
     fun init(
         textPaint: TextPaint,
         secondTextPaint: TextPaint,
-        width: Int, gravity: Int
+        width: Int, align: Layout.Alignment
     ) {
-        val align: Layout.Alignment = when (gravity) {
-            GRAVITY_LEFT -> Layout.Alignment.ALIGN_NORMAL
-            GRAVITY_CENTER -> Layout.Alignment.ALIGN_CENTER
-            GRAVITY_RIGHT -> Layout.Alignment.ALIGN_OPPOSITE
-            else -> Layout.Alignment.ALIGN_CENTER
-        }
         staticLayout = createStaticLayout(text, textPaint, width, align)
         secondStaticLayout = createStaticLayout(secondText, secondTextPaint, width, align)
         offset = Float.MIN_VALUE
