@@ -41,6 +41,7 @@ open class LyricViewX @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr), LyricViewXInterface {
+    protected val readyHelper = ReadyHelper()
 
     companion object {
         // 调整时间
@@ -87,6 +88,7 @@ open class LyricViewX @JvmOverloads constructor(
 
     @SuppressLint("CustomViewStyleable")
     private fun init(attrs: AttributeSet?) {
+        readyHelper.readyState = STATE_INITIALIZING
         val ta = context.obtainStyledAttributes(attrs, R.styleable.LrcView)
         mCurrentTextSize = ta.getDimension(
             R.styleable.LrcView_lrcTextSize,
@@ -197,6 +199,7 @@ open class LyricViewX @JvmOverloads constructor(
                 smoothScrollTo(mCurrentLine, 0L)
             }
         }
+        readyHelper.readyState = STATE_INITIALIZED
     }
 
     /**
@@ -732,15 +735,18 @@ open class LyricViewX @JvmOverloads constructor(
     }
 
     override fun updateTime(time: Long, force: Boolean) {
-        runOnUi {
-            if (hasLrc()) {
-                val line = findShowLine(time)
-                if (line != mCurrentLine) {
-                    mCurrentLine = line
-                    if (!isShowTimeline) {
-                        smoothScrollTo(line, if (force) 0L else mAnimationDuration)
-                    } else {
-                        this@LyricViewX.invalidate()
+        readyHelper.whenReady {
+            if (!it) return@whenReady
+            runOnUi {
+                if (hasLrc()) {
+                    val line = findShowLine(time)
+                    if (line != mCurrentLine) {
+                        mCurrentLine = line
+                        if (!isShowTimeline) {
+                            smoothScrollTo(line, if (force) 0L else mAnimationDuration)
+                        } else {
+                            this@LyricViewX.invalidate()
+                        }
                     }
                 }
             }
