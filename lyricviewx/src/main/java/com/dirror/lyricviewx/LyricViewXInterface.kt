@@ -137,7 +137,10 @@ interface LyricViewXInterface {
      * 刷新歌词
      * @param time 当前播放时间
      */
-    fun updateTime(time: Long)
+    fun updateTime(time: Long, force: Boolean)
+    fun updateTime(time: Long) {
+        updateTime(time, false)
+    }
 
     /**
      * 设置歌词是否允许拖动

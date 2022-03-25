@@ -731,14 +731,14 @@ open class LyricViewX @JvmOverloads constructor(
         }.execute(lyricUrl, charset)
     }
 
-    override fun updateTime(time: Long) {
+    override fun updateTime(time: Long, force: Boolean) {
         runOnUi {
             if (hasLrc()) {
                 val line = findShowLine(time)
                 if (line != mCurrentLine) {
                     mCurrentLine = line
                     if (!isShowTimeline) {
-                        smoothScrollTo(line)
+                        smoothScrollTo(line, if (force) 0L else mAnimationDuration)
                     } else {
                         this@LyricViewX.invalidate()
                     }
