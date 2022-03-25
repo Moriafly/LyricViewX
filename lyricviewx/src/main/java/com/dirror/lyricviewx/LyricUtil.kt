@@ -1,6 +1,7 @@
 package com.dirror.lyricviewx
 
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.text.TextUtils
 import android.text.format.DateUtils
 import java.io.*
@@ -51,7 +52,8 @@ object LyricUtil {
         }
         val entryList: MutableList<LyricEntry> = ArrayList()
         try {
-            val br = BufferedReader(InputStreamReader(FileInputStream(lrcFile), StandardCharsets.UTF_8))
+            val br =
+                BufferedReader(InputStreamReader(FileInputStream(lrcFile), StandardCharsets.UTF_8))
             var line: String
             while (br.readLine().also { line = it } != null) {
                 val list = parseLine(line)
@@ -77,6 +79,39 @@ object LyricUtil {
         val mainLrcText = lrcTexts[0]
         val secondLrcText = lrcTexts[1]
         val mainEntryList = mainLrcText?.let { parseLrc(it) }
+
+        /**
+         * 当输入的secondLrcText为空时,按如下格式解析歌词
+         * （音乐标签下载的第二种歌词格式）
+         *
+         *  [00:21.11]いつも待ち合わせより15分前集合
+         *  [00:21.11]总会比相约时间早15分钟集合
+         *  [00:28.32]駅の改札ぬける
+         *  [00:28.32]穿过车站的检票口
+         *  [00:31.39]ざわめきにわくわくだね
+         *  [00:31.39]嘈杂声令内心兴奋不已
+         *  [00:35.23]どこへ向かうかなんて
+         *  [00:35.23]不在意接下来要去哪里
+         */
+        if (TextUtils.isEmpty(secondLrcText)) {
+            var lastEntry: LyricEntry? = null
+            return mainEntryList?.filter { now ->
+                if (lastEntry == null) {
+                    lastEntry = now
+                    return@filter true
+                }
+
+                if (lastEntry!!.time == now.time) {
+                    lastEntry!!.secondText = now.text
+                    lastEntry = null
+                    return@filter false
+                }
+
+                lastEntry = now
+                true
+            }
+        }
+
         val secondEntryList = secondLrcText?.let { parseLrc(it) }
         if (mainEntryList != null && secondEntryList != null) {
             for (mainEntry in mainEntryList) {
@@ -191,6 +226,7 @@ object LyricUtil {
     /**
      * BUG java.lang.NoSuchFieldException: No field sDurationScale in class Landroid/animation/ValueAnimator; #3
      */
+    @SuppressLint("SoonBlockedPrivateApi")
     @Deprecated("")
     fun resetDurationScale() {
         try {
