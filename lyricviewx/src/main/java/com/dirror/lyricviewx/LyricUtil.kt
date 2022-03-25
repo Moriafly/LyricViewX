@@ -1,6 +1,7 @@
 package com.dirror.lyricviewx
 
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.text.TextUtils
 import android.text.format.DateUtils
 import java.io.*
@@ -225,6 +226,7 @@ object LyricUtil {
     /**
      * BUG java.lang.NoSuchFieldException: No field sDurationScale in class Landroid/animation/ValueAnimator; #3
      */
+    @SuppressLint("SoonBlockedPrivateApi")
     @Deprecated("")
     fun resetDurationScale() {
         try {

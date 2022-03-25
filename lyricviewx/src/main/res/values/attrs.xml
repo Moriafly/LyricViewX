@@ -3,7 +3,8 @@
     <declare-styleable name="LrcView">
         <attr name="lrcTextSize" format="dimension" />
         <attr name="lrcNormalTextSize" format="dimension" />
-        <attr name="lrcDividerHeight" format="dimension" />
+        <attr name="lrcSentenceDividerHeight" format="dimension" />
+        <attr name="lrcTranslateDividerHeight" format="dimension" />
         <attr name="lrcNormalTextColor" format="reference|color" />
         <attr name="lrcCurrentTextColor" format="reference|color" />
         <attr name="lrcTimelineTextColor" format="reference|color" />
@@ -20,5 +21,6 @@
             <enum name="left" value="1" />
             <enum name="right" value="2" />
         </attr>
+        <attr name="lrcSecondTextScaleValue" format="float" />
     </declare-styleable>
 </resources>
