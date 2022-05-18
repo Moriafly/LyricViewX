@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="LrcView">
+    <declare-styleable name="LyricView">
         <attr name="lrcTextSize" format="dimension" />
         <attr name="lrcNormalTextSize" format="dimension" />
         <attr name="lrcSentenceDividerHeight" format="dimension" />
