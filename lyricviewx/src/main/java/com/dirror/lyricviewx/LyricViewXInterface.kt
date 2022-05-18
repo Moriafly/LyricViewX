@@ -1,5 +1,6 @@
 package com.dirror.lyricviewx
 
+import androidx.annotation.GravityInt
 import java.io.File
 
 /**
@@ -9,6 +10,16 @@ import java.io.File
  * @since 2021年1月28日16:29:16
  */
 interface LyricViewXInterface {
+
+    /**
+     * 设置歌词的重心：靠左 / 居中 / 靠右
+     */
+    fun setLrcTextGravity(@GravityInt gravity: Int)
+
+    /**
+     * 设置歌词padding
+     */
+    fun setLrcTextPadding(padding: Float)
 
     /**
      * 设置非当前行歌词字体颜色 [normalColor]

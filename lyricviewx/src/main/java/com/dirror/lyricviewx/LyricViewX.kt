@@ -15,10 +15,12 @@ import android.text.format.DateUtils
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
+import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.Scroller
+import androidx.annotation.GravityInt
 import androidx.core.content.ContextCompat
 import com.dirror.lyricviewx.LyricUtil.formatTime
 import com.dirror.lyricviewx.LyricUtil.getContentFromNetwork
@@ -314,74 +316,92 @@ class LyricViewX @JvmOverloads constructor(
     /**
      * 手势监听器
      */
-    private val mSimpleOnGestureListener: SimpleOnGestureListener = object : SimpleOnGestureListener() {
-        /**
-         * 按下
-         */
-        override fun onDown(e: MotionEvent): Boolean {
-            // 有歌词并且设置了 mOnPlayClickListener
-            if (hasLrc() && mOnPlayClickListener != null) {
-                mScroller!!.forceFinished(true)
-                removeCallbacks(hideTimelineRunnable)
-                isTouching = true
-                // isShowTimeline = true;
-                invalidate()
-                return true
-            }
-            return super.onDown(e)
-        }
-
-        override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
-            if (hasLrc()) {
-                // 滚动显示时间线
-                isShowTimeline = true
-                mOffset += -distanceY
-                mOffset = mOffset.coerceAtMost(getOffset(0))
-                mOffset = mOffset.coerceAtLeast(getOffset(lyricEntryList.size - 1))
-                invalidate()
-                return true
-            }
-            return super.onScroll(e1, e2, distanceX, distanceY)
-        }
-
-        override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-            if (hasLrc()) {
-                mScroller!!.fling(
-                    0,
-                    mOffset.toInt(),
-                    0,
-                    velocityY.toInt(),
-                    0,
-                    0,
-                    getOffset(lyricEntryList.size - 1).toInt(),
-                    getOffset(0).toInt()
-                )
-                isFling = true
-                return true
-            }
-            return super.onFling(e1, e2, velocityX, velocityY)
-        }
-
-        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-            if (hasLrc() && isShowTimeline && mPlayDrawable!!.bounds.contains(e.x.toInt(), e.y.toInt())) {
-                val centerLine = centerLine
-                val centerLineTime = lyricEntryList[centerLine].time
-                // onPlayClick 消费了才更新 UI
-                if (mOnPlayClickListener != null && mOnPlayClickListener!!.onPlayClick(centerLineTime)) {
-                    isShowTimeline = false
+    private val mSimpleOnGestureListener: SimpleOnGestureListener =
+        object : SimpleOnGestureListener() {
+            /**
+             * 按下
+             */
+            override fun onDown(e: MotionEvent): Boolean {
+                // 有歌词并且设置了 mOnPlayClickListener
+                if (hasLrc() && mOnPlayClickListener != null) {
+                    mScroller!!.forceFinished(true)
                     removeCallbacks(hideTimelineRunnable)
-                    mCurrentLine = centerLine
+                    isTouching = true
+                    // isShowTimeline = true;
                     invalidate()
                     return true
                 }
-            } else {
-                if (mOnSingerClickListener != null) {
-                    mOnSingerClickListener!!.onClick()
-                }
+                return super.onDown(e)
             }
-            return super.onSingleTapConfirmed(e)
+
+            override fun onScroll(
+                e1: MotionEvent,
+                e2: MotionEvent,
+                distanceX: Float,
+                distanceY: Float
+            ): Boolean {
+                if (hasLrc()) {
+                    // 滚动显示时间线
+                    isShowTimeline = true
+                    mOffset += -distanceY
+                    mOffset = mOffset.coerceAtMost(getOffset(0))
+                    mOffset = mOffset.coerceAtLeast(getOffset(lyricEntryList.size - 1))
+                    invalidate()
+                    return true
+                }
+                return super.onScroll(e1, e2, distanceX, distanceY)
+            }
+
+            override fun onFling(
+                e1: MotionEvent,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                if (hasLrc()) {
+                    mScroller!!.fling(
+                        0,
+                        mOffset.toInt(),
+                        0,
+                        velocityY.toInt(),
+                        0,
+                        0,
+                        getOffset(lyricEntryList.size - 1).toInt(),
+                        getOffset(0).toInt()
+                    )
+                    isFling = true
+                    return true
+                }
+                return super.onFling(e1, e2, velocityX, velocityY)
+            }
+
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                if (hasLrc() && isShowTimeline && mPlayDrawable!!.bounds.contains(
+                        e.x.toInt(),
+                        e.y.toInt()
+                    )
+                ) {
+                    val centerLine = centerLine
+                    val centerLineTime = lyricEntryList[centerLine].time
+                    // onPlayClick 消费了才更新 UI
+                    if (mOnPlayClickListener != null && mOnPlayClickListener!!.onPlayClick(
+                            centerLineTime
+                        )
+                    ) {
+                        isShowTimeline = false
+                        removeCallbacks(hideTimelineRunnable)
+                        mCurrentLine = centerLine
+                        invalidate()
+                        return true
+                    }
+                } else {
+                    if (mOnSingerClickListener != null) {
+                        mOnSingerClickListener!!.onClick()
+                    }
+                }
+                return super.onSingleTapConfirmed(e)
+            }
         }
-    }
 
     private val hideTimelineRunnable = Runnable {
         if (hasLrc() && isShowTimeline) {
@@ -587,6 +607,26 @@ class LyricViewX @JvmOverloads constructor(
      * 以下是公共部分
      * 用法见接口 [LyricViewXInterface]
      */
+
+    override fun setLrcTextGravity(@GravityInt gravity: Int) {
+        mTextGravity = when (gravity) {
+            Gravity.LEFT -> {
+                1
+            }
+            Gravity.RIGHT -> {
+                2
+            }
+            Gravity.CENTER -> {
+                0
+            }
+            else -> throw IllegalArgumentException("TextGravity不支持$gravity")
+        }
+        postInvalidate()
+    }
+
+    override fun setLrcTextPadding(padding: Float) {
+        mLrcPadding = padding
+    }
 
     override fun setNormalColor(normalColor: Int) {
         mNormalTextColor = normalColor

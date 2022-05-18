@@ -1,8 +1,8 @@
 package com.dirror.lyricviewx
 
-import android.graphics.Color
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.Gravity
+import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +64,7 @@ class MainActivity : AppCompatActivity() {
             [04:05.77] 你明明讨厌窒息
         """.trimIndent()
         lyricViewX.loadLyric(lyric)
+        lyricViewX.setLrcTextGravity(Gravity.LEFT)
         lyricViewX.setDraggable(true, object : OnPlayClickListener {
             override fun onPlayClick(time: Long): Boolean {
                 lyricViewX.updateTime(time)
