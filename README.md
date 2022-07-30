@@ -6,7 +6,7 @@ LyricViewX is a beautiful Lyrics control for Android.
 
 Based on [LrcView](https://github.com/zion223/NeteaseCloudMusic-MVVM/blob/master/lib_common_ui/src/main/java/com/netease/lib_common_ui/lrc/LrcView.java) design.
 
-[中文点击这里](/README-zh-CN.md)
+[中文点击这里（可能不是最新）](/README-zh-CN.md)
 
 ## Compare with LrcView
 
@@ -49,7 +49,8 @@ dependencies {
 
 ## In activity
 ```kt
-    binding.lyricViewX.loadLyric()
+val lyricViewX = findViewById<LyricViewX>(R.id.lyricViewX)
+lyricViewX.loadLyric()
 ```
 
 ## Functions
@@ -155,9 +156,19 @@ fun onClick()
 
 ```
 
+## ScrollInterpolator
+
+If you want to use a custom scroll interpolator, you can use the following code:
+
+```kotlin
+// Set the custom interpolator
+val interpolator = LinearInterpolator()
+lyricViewX.smoothScrollInterpolator = interpolator
+```
+
 ## License
 
-    LyricViewX  Copyright (C) 2021  Moriafly
+    LyricViewX  Copyright (C) 2021-2022 Moriafly
     This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
     This is free software, and you are welcome to redistribute it
     under certain conditions; type `show c' for details.

@@ -17,7 +17,7 @@ const val STATE_ERROR = 4
 annotation class ReadyState
 
 /**
- * 简单的状态机，根据[readyState]的状态决定当前任务的执行或延后与否
+ * 简单的状态机，根据 [readyState] 的状态决定当前任务的执行或延后与否
  */
 open class ReadyHelper {
     private var readyCallback: (Boolean) -> Unit = {}

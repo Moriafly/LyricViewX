@@ -1,3 +1,5 @@
+@file:Suppress("unused", "MemberVisibilityCanBePrivate")
+
 package com.dirror.lyricviewx
 
 import android.animation.ValueAnimator
@@ -18,6 +20,7 @@ import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.DecelerateInterpolator
+import android.view.animation.Interpolator
 import android.widget.Scroller
 import androidx.core.content.ContextCompat
 import com.dirror.lyricviewx.LyricUtil.formatTime
@@ -47,7 +50,10 @@ open class LyricViewX @JvmOverloads constructor(
     private val secondLyricPaint = TextPaint() // 歌词画笔
     private val timePaint = TextPaint() // 时间文字画笔
     private var mTimeFontMetrics: Paint.FontMetrics? = null
-    private var mPlayDrawable: Drawable? = null
+
+    /** 跳转播放按钮 */
+    private var playDrawable: Drawable? = null
+
     private var mTranslateDividerHeight = 0f
     private var mSentenceDividerHeight = 0f
     private var mAnimationDuration: Long = 0
@@ -76,6 +82,13 @@ open class LyricViewX @JvmOverloads constructor(
     private var isFling = false
     private var mTextGravity = GRAVITY_CENTER // 歌词显示位置，靠左 / 居中 / 靠右
     private var mHorizontalOffset: Float = 0f
+
+    /**
+     * 调用 [smoothScrollTo] 动画使用的插值器
+     *
+     * @since 1.3.0
+     */
+    var smoothScrollInterpolator: Interpolator = DecelerateInterpolator()
 
     @SuppressLint("CustomViewStyleable")
     private fun init(attrs: AttributeSet?) {
@@ -135,11 +148,11 @@ open class LyricViewX @JvmOverloads constructor(
             R.styleable.LyricView_lrcTimelineHeight,
             resources.getDimension(R.dimen.lrc_timeline_height)
         )
-        mPlayDrawable = ta.getDrawable(R.styleable.LyricView_lrcPlayDrawable)
-        mPlayDrawable = if (mPlayDrawable == null) ContextCompat.getDrawable(
+        playDrawable = ta.getDrawable(R.styleable.LyricView_lrcPlayDrawable)
+        playDrawable = if (playDrawable == null) ContextCompat.getDrawable(
             context,
             R.drawable.lrc_play
-        ) else mPlayDrawable
+        ) else playDrawable
         mTimeTextColor = ta.getColor(
             R.styleable.LyricView_lrcTimeTextColor,
             ContextCompat.getColor(context, R.color.lrc_time_text_color)
@@ -213,9 +226,10 @@ open class LyricViewX @JvmOverloads constructor(
             }
             return
         }
+        // 歌词有效
         val centerLine = centerLine
         if (isShowTimeline) {
-            mPlayDrawable!!.draw(canvas)
+            playDrawable!!.draw(canvas)
             timePaint.color = mTimelineColor
             canvas.drawLine(
                 mTimeTextWidth.toFloat(),
@@ -333,7 +347,7 @@ open class LyricViewX @JvmOverloads constructor(
         }
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-            if (hasLrc() && isShowTimeline && mPlayDrawable!!.bounds.contains(e.x.toInt(), e.y.toInt())) {
+            if (hasLrc() && isShowTimeline && playDrawable!!.bounds.contains(e.x.toInt(), e.y.toInt())) {
                 val centerLine = centerLine
                 val centerLineTime = lyricEntryList[centerLine].time
                 // onPlayClick 消费了才更新 UI
@@ -393,7 +407,7 @@ open class LyricViewX @JvmOverloads constructor(
         val t = startOffset.toInt() - mDrawableWidth / 2
         val r = l + mDrawableWidth
         val b = t + mDrawableWidth
-        mPlayDrawable!!.setBounds(l, t, r, b)
+        playDrawable!!.setBounds(l, t, r, b)
     }
 
     private fun initEntryList() {
@@ -449,7 +463,7 @@ open class LyricViewX @JvmOverloads constructor(
         animator = ValueAnimator.ofFloat(mOffset, offset).apply {
             setDuration(duration)
             // Salt Spring 插值器
-            interpolator = DecelerateInterpolator() // SmoothInterpolator()
+            interpolator = smoothScrollInterpolator
             addUpdateListener { animation: ValueAnimator ->
                 mOffset = animation.animatedValue as Float
                 this@LyricViewX.invalidate()
@@ -509,7 +523,6 @@ open class LyricViewX @JvmOverloads constructor(
      * 因为添加了 [mTranslateDividerHeight] 用来间隔开歌词与翻译，
      * 所以直接从 [LyricEntry] 获取高度不可行，
      * 故使用该 [getLyricHeight] 方法来计算 [LyricEntry] 的高度
-     *
      */
     open fun getLyricHeight(line: Int): Int {
         var height = lyricEntryList[line].staticLayout?.height ?: return 0
@@ -718,6 +731,7 @@ open class LyricViewX @JvmOverloads constructor(
     }
 
     override fun updateTime(time: Long, force: Boolean) {
+        // 将方法的执行延后至 View 创建完成后执行
         readyHelper.whenReady {
             if (!it) return@whenReady
             runOnUi {

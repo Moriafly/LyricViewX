@@ -1,7 +1,10 @@
 package com.dirror.lyricviewx
 
 import android.text.Layout
+import android.view.animation.Interpolator
+import androidx.annotation.ColorInt
 import androidx.annotation.FloatRange
+import androidx.annotation.Px
 import java.io.File
 
 const val GRAVITY_CENTER = 0    // 居中
@@ -30,23 +33,23 @@ interface LyricViewXInterface {
      * 设置整句之间的间隔高度
      * @param height px
      */
-    fun setSentenceDividerHeight(height: Float)
+    fun setSentenceDividerHeight(@Px height: Float)
 
     /**
      * 设置原句与翻译之间的间隔高度
      * @param height px
      */
-    fun setTranslateDividerHeight(height: Float)
+    fun setTranslateDividerHeight(@Px height: Float)
 
     /**
      * 设置歌词整体的垂直偏移值
      * @param offset px
      */
-    fun setHorizontalOffset(offset: Float)
+    fun setHorizontalOffset(@Px offset: Float)
 
     /**
      * 设置翻译相对与原词之间的缩放比例值
-     * @param scaleValue 一般来说0.8f是个不错的值
+     * @param scaleValue 一般来说 0.8f 是个不错的值
      */
     fun setTranslateTextScaleValue(@FloatRange(from = 0.1, to = 2.0) scaleValue: Float)
 
@@ -58,12 +61,12 @@ interface LyricViewXInterface {
     /**
      * 设置非当前行歌词字体颜色 [normalColor]
      */
-    fun setNormalColor(normalColor: Int)
+    fun setNormalColor(@ColorInt normalColor: Int)
 
     /**
      * 普通歌词文本字体大小 [size]，单位 px
      */
-    fun setNormalTextSize(size: Float)
+    fun setNormalTextSize(@Px size: Float)
 
     /**
      * 当前歌词文本字体大小
@@ -162,6 +165,7 @@ interface LyricViewXInterface {
      * 获取当前行歌词
      */
     fun getCurrentLineLyricEntry(): LyricEntry?
+
 }
 
 /**
