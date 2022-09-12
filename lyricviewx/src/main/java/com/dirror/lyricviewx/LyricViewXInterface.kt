@@ -1,5 +1,6 @@
 package com.dirror.lyricviewx
 
+import android.graphics.Typeface
 import android.text.Layout
 import androidx.annotation.FloatRange
 import java.io.File
@@ -172,6 +173,27 @@ interface LyricViewXInterface {
      * 获取当前行歌词
      */
     fun getCurrentLineLyricEntry(): LyricEntry?
+
+    /**
+     * 为歌词设置自定义的字体
+     *
+     * @param file 字体文件
+     */
+    fun setLyricTypeface(file: File)
+
+    /**
+     * 为歌词设置自定义的字体
+     *
+     * @param path 字体文件路径
+     */
+    fun setLyricTypeface(path: String)
+
+    /**
+     * 为歌词设置自定义的字体，可为空，若为空则应清除字体
+     *
+     * @param typeface 字体对象
+     */
+    fun setLyricTypeface(typeface: Typeface?)
 }
 
 /**
