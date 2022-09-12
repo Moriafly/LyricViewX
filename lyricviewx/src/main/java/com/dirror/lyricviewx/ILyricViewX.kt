@@ -2,7 +2,10 @@ package com.dirror.lyricviewx
 
 import android.graphics.Typeface
 import android.text.Layout
+import android.view.animation.Interpolator
+import androidx.annotation.ColorInt
 import androidx.annotation.FloatRange
+import androidx.annotation.Px
 import java.io.File
 
 const val GRAVITY_CENTER = 0    // 居中
@@ -21,42 +24,33 @@ fun Int.toLayoutAlign(): Layout.Alignment {
 /**
  * LyricViewX 接口
  * 从 LyricViewX 提取，方便管理
+ *
  * @author Moriafly
  * @since 2021年1月28日16:29:16
  */
 interface LyricViewXInterface {
-    fun dpToPx(dp: Float): Float
 
     /**
      * 设置整句之间的间隔高度
      * @param height px
      */
-    fun setSentenceDividerHeight(height: Float)
-    fun setSentenceDividerHeightWithDp(dpValue: Float) {
-        setSentenceDividerHeight(dpToPx(dpValue))
-    }
+    fun setSentenceDividerHeight(@Px height: Float)
 
     /**
      * 设置原句与翻译之间的间隔高度
      * @param height px
      */
-    fun setTranslateDividerHeight(height: Float)
-    fun setTranslateDividerHeightWithDp(dpValue: Float) {
-        setTranslateDividerHeight(dpToPx(dpValue))
-    }
+    fun setTranslateDividerHeight(@Px height: Float)
 
     /**
      * 设置歌词整体的垂直偏移值
      * @param offset px
      */
-    fun setHorizontalOffset(offset: Float)
-    fun setHorizontalOffsetWithDp(dpValue: Float) {
-        setHorizontalOffset(dpToPx(dpValue))
-    }
+    fun setHorizontalOffset(@Px offset: Float)
 
     /**
      * 设置翻译相对与原词之间的缩放比例值
-     * @param scaleValue 一般来说0.8f是个不错的值
+     * @param scaleValue 一般来说 0.8f 是个不错的值
      */
     fun setTranslateTextScaleValue(@FloatRange(from = 0.1, to = 2.0) scaleValue: Float)
 
@@ -68,23 +62,17 @@ interface LyricViewXInterface {
     /**
      * 设置非当前行歌词字体颜色 [normalColor]
      */
-    fun setNormalColor(normalColor: Int)
+    fun setNormalColor(@ColorInt normalColor: Int)
 
     /**
      * 普通歌词文本字体大小 [size]，单位 px
      */
-    fun setNormalTextSize(size: Float)
-    fun setNormalTextSizeWithDp(dpValue: Float) {
-        setNormalTextSize(dpToPx(dpValue))
-    }
+    fun setNormalTextSize(@Px size: Float)
 
     /**
      * 当前歌词文本字体大小
      */
     fun setCurrentTextSize(size: Float)
-    fun setCurrentTextSizeWithDp(dpValue: Float) {
-        setCurrentTextSize(dpToPx(dpValue))
-    }
 
     /**
      * 设置当前行歌词的字体颜色
@@ -112,39 +100,43 @@ interface LyricViewXInterface {
     fun setLabel(label: String)
 
     /**
-     * 加载歌词文件
-     * 两种语言的歌词时间戳需要一致
-     * @param mainLyricFile 第一种语言歌词文件
-     * @param secondLyricFile 可选，第二种语言歌词文件
-     */
-    fun loadLyric(mainLyricFile: File, secondLyricFile: File? = null)
-
-    /**
      * 加载歌词文本
      * 两种语言的歌词时间戳需要一致
+     *
      * @param mainLyricText 第一种语言歌词文本
      * @param secondLyricText 可选，第二种语言歌词文本
      */
     fun loadLyric(mainLyricText: String?, secondLyricText: String? = null)
 
     /**
+     * 加载歌词文件
+     * 两种语言的歌词时间戳需要一致
+     *
+     * @param mainLyricFile 第一种语言歌词文件
+     * @param secondLyricFile 可选，第二种语言歌词文件
+     */
+    @Deprecated(message = "加载歌词文件方法已经废弃", level = DeprecationLevel.WARNING)
+    fun loadLyric(mainLyricFile: File, secondLyricFile: File? = null)
+
+    /**
      * 加载在线歌词
+     *
      * @param lyricUrl  歌词文件的网络地址
      * @param charset 编码格式
      */
+    @Deprecated(message = "加载在线歌词方法已经废弃", level = DeprecationLevel.WARNING)
     fun loadLyricByUrl(lyricUrl: String, charset: String? = "utf-8")
 
     /**
      * 刷新歌词
+     *
      * @param time 当前播放时间
      */
-    fun updateTime(time: Long, force: Boolean)
-    fun updateTime(time: Long) {
-        updateTime(time, false)
-    }
+    fun updateTime(time: Long, force: Boolean = false)
 
     /**
      * 设置歌词是否允许拖动
+     *
      * @param draggable 是否允许拖动
      * @param onPlayClickListener 设置歌词拖动后播放按钮点击监听器，如果允许拖动，则不能为 null
      */
@@ -158,6 +150,7 @@ interface LyricViewXInterface {
     /**
      * @新增加
      * 获取当前歌词每句实体，可用于歌词分享
+     *
      * @return LyricEntry 集合
      */
     fun getLyricEntryList(): List<LyricEntry>
