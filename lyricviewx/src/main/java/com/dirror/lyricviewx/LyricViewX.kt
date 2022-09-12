@@ -7,6 +7,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.os.AsyncTask
 import android.os.Looper
@@ -780,6 +781,25 @@ open class LyricViewX @JvmOverloads constructor(
         return null
     }
 
+    override fun setLyricTypeface(file: File) {
+        val typeface = file.takeIf { it.exists() }
+            ?.runCatching { Typeface.createFromFile(this) }
+            ?.getOrNull() ?: return
+
+        setLyricTypeface(typeface)
+    }
+
+    override fun setLyricTypeface(path: String) {
+        setLyricTypeface(File(path))
+    }
+
+    override fun setLyricTypeface(typeface: Typeface?) {
+        lyricPaint.typeface = typeface
+        secondLyricPaint.typeface = typeface
+
+        invalidate()
+    }
+
     companion object {
         // 调整时间
         private const val ADJUST_DURATION: Long = 100
@@ -787,5 +807,4 @@ open class LyricViewX @JvmOverloads constructor(
         // 时间线持续时间
         private const val TIMELINE_KEEP_TIME = 3 * DateUtils.SECOND_IN_MILLIS
     }
-
 }
