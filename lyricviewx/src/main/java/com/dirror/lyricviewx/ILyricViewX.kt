@@ -133,7 +133,7 @@ interface LyricViewXInterface {
      * @param lyricUrl  歌词文件的网络地址
      * @param charset 编码格式
      */
-    @Deprecated(message = "加载在线歌词方法已经废弃", level = DeprecationLevel.WARNING)
+    @Deprecated(message = "加载在线歌词方法已经废弃", level = DeprecationLevel.ERROR)
     fun loadLyricByUrl(lyricUrl: String, charset: String? = "utf-8")
 
     /**
