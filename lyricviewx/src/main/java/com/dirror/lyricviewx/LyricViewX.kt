@@ -668,6 +668,28 @@ open class LyricViewX @JvmOverloads constructor(
         }
     }
 
+    override fun loadLyric(mainLyricText: String?, secondLyricText: String?) {
+        runOnMain {
+            reset()
+            val sb = StringBuilder("file://")
+            sb.append(mainLyricText)
+            if (secondLyricText != null) {
+                sb.append("#").append(secondLyricText)
+            }
+            val flag = sb.toString()
+            this@LyricViewX.flag = flag
+            thread {
+                val lrcEntries = LyricUtil.parseLrc(arrayOf(mainLyricText, secondLyricText))
+                runOnMain {
+                    if (flag === flag) {
+                        onLrcLoaded(lrcEntries)
+                        this@LyricViewX.flag = null
+                    }
+                }
+            }
+        }
+    }
+
     override fun loadLyric(mainLyricFile: File, secondLyricFile: File?) {
         runOnMain {
             reset()
@@ -690,28 +712,6 @@ open class LyricViewX @JvmOverloads constructor(
                     return LyricUtil.parseLrc(params)
                 }
             }.execute(mainLyricFile, secondLyricFile)
-        }
-    }
-
-    override fun loadLyric(mainLyricText: String?, secondLyricText: String?) {
-        runOnMain {
-            reset()
-            val sb = StringBuilder("file://")
-            sb.append(mainLyricText)
-            if (secondLyricText != null) {
-                sb.append("#").append(secondLyricText)
-            }
-            val flag = sb.toString()
-            this@LyricViewX.flag = flag
-            thread {
-                val lrcEntries = LyricUtil.parseLrc(arrayOf(mainLyricText, secondLyricText))
-                runOnMain {
-                    if (flag === flag) {
-                        onLrcLoaded(lrcEntries)
-                        this@LyricViewX.flag = null
-                    }
-                }
-            }
         }
     }
 
