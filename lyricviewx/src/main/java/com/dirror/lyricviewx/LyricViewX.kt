@@ -717,11 +717,13 @@ open class LyricViewX @JvmOverloads constructor(
 
     override fun loadLyric(lyricEntries: List<LyricEntry>) {
         runOnMain {
+            reset()
             onLrcLoaded(lyricEntries)
         }
     }
 
     override fun loadLyricByUrl(lyricUrl: String, charset: String?) {
+        reset()
         val flag = "url://$lyricUrl"
         this.flag = flag
         object : AsyncTask<String?, Int?, String?>() {
