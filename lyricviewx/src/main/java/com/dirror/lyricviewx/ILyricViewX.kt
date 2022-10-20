@@ -157,7 +157,6 @@ interface LyricViewXInterface {
     fun setOnSingerClickListener(onSingerClickListener: OnSingleClickListener?)
 
     /**
-     * @新增加
      * 获取当前歌词每句实体，可用于歌词分享
      *
      * @return LyricEntry 集合
@@ -165,13 +164,11 @@ interface LyricViewXInterface {
     fun getLyricEntryList(): List<LyricEntry>
 
     /**
-     * @新增加
      * 设置当前歌词每句实体
      */
     fun setLyricEntryList(newList: List<LyricEntry>)
 
     /**
-     * @新增加
      * 获取当前行歌词
      */
     fun getCurrentLineLyricEntry(): LyricEntry?
