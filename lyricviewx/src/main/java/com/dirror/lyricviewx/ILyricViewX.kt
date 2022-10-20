@@ -109,6 +109,15 @@ interface LyricViewXInterface {
     fun loadLyric(mainLyricText: String?, secondLyricText: String? = null)
 
     /**
+     * 加载歌词 [LyricEntry] 集合
+     * 如果你在 Service 等地方自行解析歌词包装成 [LyricEntry] 集合，那么可以使用此方法载入歌词
+     *
+     * @param lyricEntries 歌词集合
+     * @since 1.3.1
+     */
+    fun loadLyric(lyricEntries: List<LyricEntry>)
+
+    /**
      * 加载歌词文件
      * 两种语言的歌词时间戳需要一致
      *
