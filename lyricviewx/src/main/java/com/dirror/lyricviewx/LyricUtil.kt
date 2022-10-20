@@ -202,9 +202,13 @@ object LyricUtil {
             val sec = timeMatcher.group(2).toLong()
             val milString = timeMatcher.group(3)
             var mil = milString.toLong()
-            // 如果毫秒是两位数，需要乘以10
-            if (milString.length == 2) {
-                mil *= 10
+            // 如果毫秒是两位数，需要乘以 10，when 新增支持 1 - 6 位毫秒，很多获取的歌词存在不同的毫秒位数
+            when(milString.length) {
+                1 -> mil *= 100
+                2 -> mil *= 10
+                4 -> mil /= 10
+                5 -> mil /= 100
+                6 -> mil /= 1000
             }
             val time = min * DateUtils.MINUTE_IN_MILLIS + sec * DateUtils.SECOND_IN_MILLIS + mil
             entryList.add(LyricEntry(time, text))
