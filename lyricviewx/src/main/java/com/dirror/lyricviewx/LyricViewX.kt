@@ -563,7 +563,7 @@ open class LyricViewX @JvmOverloads constructor(
     /**
      * 在主线程中运行
      */
-    private fun runOnUi(r: Runnable) {
+    private fun runOnMain(r: Runnable) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             r.run()
         } else {
@@ -662,14 +662,14 @@ open class LyricViewX @JvmOverloads constructor(
     }
 
     override fun setLabel(label: String) {
-        runOnUi {
+        runOnMain {
             mDefaultLabel = label
             this@LyricViewX.invalidate()
         }
     }
 
     override fun loadLyric(mainLyricFile: File, secondLyricFile: File?) {
-        runOnUi {
+        runOnMain {
             reset()
             val sb = StringBuilder("file://")
             sb.append(mainLyricFile.path)
@@ -694,7 +694,7 @@ open class LyricViewX @JvmOverloads constructor(
     }
 
     override fun loadLyric(mainLyricText: String?, secondLyricText: String?) {
-        runOnUi {
+        runOnMain {
             reset()
             val sb = StringBuilder("file://")
             sb.append(mainLyricText)
@@ -705,7 +705,7 @@ open class LyricViewX @JvmOverloads constructor(
             this@LyricViewX.flag = flag
             thread {
                 val lrcEntries = LyricUtil.parseLrc(arrayOf(mainLyricText, secondLyricText))
-                runOnUi {
+                runOnMain {
                     if (flag === flag) {
                         onLrcLoaded(lrcEntries)
                         this@LyricViewX.flag = null
@@ -735,7 +735,7 @@ open class LyricViewX @JvmOverloads constructor(
         // 将方法的执行延后至 View 创建完成后执行
         readyHelper.whenReady {
             if (!it) return@whenReady
-            runOnUi {
+            runOnMain {
                 if (hasLrc()) {
                     val line = findShowLine(time)
                     if (line != mCurrentLine) {
