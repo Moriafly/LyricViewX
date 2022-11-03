@@ -1,7 +1,7 @@
 package com.dirror.lyricviewx
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -104,25 +104,26 @@ class MainActivity : AppCompatActivity() {
         """.trimIndent()
         lyricViewX.loadLyric(lyric)
         lyricViewX.setTextGravity(GRAVITY_LEFT)
-        lyricViewX.setNormalTextSize(80f)
-        lyricViewX.setCurrentTextSize(100f)
+        lyricViewX.setNormalTextSize(52f)
+        lyricViewX.setCurrentTextSize(64f)
         lyricViewX.setTranslateTextScaleValue(0.8f)
+        lyricViewX.setHorizontalOffset(-200f)
 
         var position = 0L
-        fun lyricUpdateLoop() {
-            title = "LyricViewX: ${position / 1000L}"
-            lyricViewX.updateTime(position)
-            position += 1000L
-            lyricViewX.postDelayed({ lyricUpdateLoop() }, 1000)
-        }
-
         lyricViewX.setDraggable(true, object : OnPlayClickListener {
             override fun onPlayClick(time: Long): Boolean {
                 position = time
-                lyricViewX.updateTime(time)
+                lyricViewX.updateTime(position)
                 return true
             }
         })
+
+        fun lyricUpdateLoop() {
+            title = "LyricViewX: ${position / 1000L}"
+            lyricViewX.updateTime(position)
+            position += 200L
+            lyricViewX.postDelayed({ lyricUpdateLoop() }, 200)
+        }
 
         lyricViewX.postDelayed({ lyricUpdateLoop() }, 1000)
     }
