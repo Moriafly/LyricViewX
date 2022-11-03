@@ -322,14 +322,22 @@ open class LyricViewX @JvmOverloads constructor(
                 i == mCurrentLine -> {
                     scale = calcScaleValue(mCurrentTextSize, mNormalTextSize, animateProgress)
                     lyricPaint.color =
-                        lerpColor(mNormalTextColor, mCurrentTextColor, animateProgress)
+                        lerpColor(
+                            mNormalTextColor,
+                            mCurrentTextColor,
+                            animateProgress.coerceIn(0f, 1f)
+                        )
                 }
 
                 // 上一个高亮过的歌词
                 i == mLastLine -> {
                     scale = calcScaleValue(mCurrentTextSize, mNormalTextSize, animateProgress, true)
                     lyricPaint.color =
-                        lerpColor(mCurrentTextColor, mNormalTextColor, animateProgress)
+                        lerpColor(
+                            mCurrentTextColor,
+                            mNormalTextColor,
+                            animateProgress.coerceIn(0f, 1f)
+                        )
                 }
 
                 // 中心时间线选中的歌词
