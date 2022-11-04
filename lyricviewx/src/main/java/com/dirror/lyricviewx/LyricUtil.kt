@@ -1,9 +1,12 @@
 package com.dirror.lyricviewx
 
+import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.graphics.Rect
 import android.text.TextUtils
 import android.text.format.DateUtils
+import android.view.MotionEvent
 import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
@@ -19,6 +22,7 @@ object LyricUtil {
 
     private val PATTERN_LINE = Pattern.compile("((\\[\\d\\d:\\d\\d\\.\\d{2,3}])+)(.+)")
     private val PATTERN_TIME = Pattern.compile("\\[(\\d\\d):(\\d\\d)\\.(\\d{2,3})]")
+    private val argbEvaluator = ArgbEvaluator()
 
     /**
      * 从文件解析双语歌词
@@ -203,7 +207,7 @@ object LyricUtil {
             val milString = timeMatcher.group(3)
             var mil = milString.toLong()
             // 如果毫秒是两位数，需要乘以 10，when 新增支持 1 - 6 位毫秒，很多获取的歌词存在不同的毫秒位数
-            when(milString.length) {
+            when (milString.length) {
                 1 -> mil *= 100
                 2 -> mil *= 10
                 4 -> mil /= 10
@@ -242,4 +246,38 @@ object LyricUtil {
         }
     }
 
+    /**
+     * 结合fraction，计算两个值之间的比例
+     */
+    fun calcScaleValue(a: Float, b: Float, f: Float, reverse: Boolean = false): Float {
+        if (b == 0f) return 1f
+        return 1f + ((a - b) / b) * (if (reverse) 1f - f else f)
+    }
+
+    /**
+     * 颜色值插值函数
+     */
+    fun lerpColor(a: Int, b: Int, f: Float): Int {
+        return argbEvaluator.evaluate(f, a, b) as Int
+    }
+
+    /**
+     * 简单的插值函数
+     */
+    fun lerp(a: Float, b: Float, f: Float) = (1 - f) * a + b * f
+
+    /**
+     * 判断MotionEvent是否发生在Rect中
+     */
+    fun MotionEvent.insideOf(rect: Rect?): Boolean {
+        rect ?: return false
+        return rect.contains(x.toInt(), y.toInt())
+    }
+
+    fun normalize(min: Float, max: Float, value: Float, limit: Boolean = false): Float {
+        if (min == max) return 1f
+        return ((value - min) / (max - min)).let {
+            if (limit) it.coerceIn(0f, 1f) else it
+        }
+    }
 }

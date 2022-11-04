@@ -2,7 +2,6 @@ package com.dirror.lyricviewx
 
 import android.graphics.Typeface
 import android.text.Layout
-import android.view.animation.Interpolator
 import androidx.annotation.ColorInt
 import androidx.annotation.FloatRange
 import androidx.annotation.Px
@@ -193,6 +192,34 @@ interface LyricViewXInterface {
      * @param typeface 字体对象
      */
     fun setLyricTypeface(typeface: Typeface?)
+
+    /**
+     * 为歌词的过渡动画设置阻尼比（数值越大，回弹次数越多）
+     *
+     * @param dampingRatio 阻尼比 详见[androidx.dynamicanimation.animation.SpringForce]
+     */
+    fun setDampingRatioForLyric(dampingRatio: Float)
+
+    /**
+     * 为歌词视图的滚动动画设置阻尼比（数值越大，回弹次数越多）
+     *
+     * @param dampingRatio 阻尼比 详见[androidx.dynamicanimation.animation.SpringForce]
+     */
+    fun setDampingRatioForViewPort(dampingRatio: Float)
+
+    /**
+     * 为歌词的过渡动画设置刚度（数值越大，动画越短）
+     *
+     * @param stiffness 刚度 详见[androidx.dynamicanimation.animation.SpringForce]
+     */
+    fun setStiffnessForLyric(stiffness: Float)
+
+    /**
+     * 为歌词视图的滚动动画设置刚度（数值越大，动画越短）
+     *
+     * @param stiffness 刚度 详见[androidx.dynamicanimation.animation.SpringForce]
+     */
+    fun setStiffnessForViewPort(stiffness: Float)
 }
 
 /**
@@ -201,6 +228,7 @@ interface LyricViewXInterface {
 interface OnPlayClickListener {
     /**
      * 播放按钮被点击，应该跳转到指定播放位置
+     *
      * @return 是否成功消费该事件，如果成功消费，则会更新UI
      */
     fun onPlayClick(time: Long): Boolean
