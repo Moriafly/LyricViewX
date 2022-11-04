@@ -118,25 +118,6 @@ interface LyricViewXInterface {
     fun loadLyric(lyricEntries: List<LyricEntry>)
 
     /**
-     * 加载歌词文件
-     * 两种语言的歌词时间戳需要一致
-     *
-     * @param mainLyricFile 第一种语言歌词文件
-     * @param secondLyricFile 可选，第二种语言歌词文件
-     */
-    @Deprecated(message = "加载歌词文件方法已经废弃", level = DeprecationLevel.WARNING)
-    fun loadLyric(mainLyricFile: File, secondLyricFile: File? = null)
-
-    /**
-     * 加载在线歌词
-     *
-     * @param lyricUrl  歌词文件的网络地址
-     * @param charset 编码格式
-     */
-    @Deprecated(message = "加载在线歌词方法已经废弃", level = DeprecationLevel.ERROR)
-    fun loadLyricByUrl(lyricUrl: String, charset: String? = "utf-8")
-
-    /**
      * 刷新歌词
      *
      * @param time 当前播放时间
