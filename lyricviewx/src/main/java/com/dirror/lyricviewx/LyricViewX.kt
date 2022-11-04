@@ -325,22 +325,35 @@ open class LyricViewX : View, LyricViewXInterface {
         }
         canvas.translate(0f, mViewPortOffset)
 
-        var y = 0f
-        var scale: Float
+        var yOffset = 0f
+        var scaleValue: Float
 
-        /**
-         * TODO 待优化掉不必要的draw, 提升性能表现
-         *
-         * 因为已经有了准确的[mViewPortOffset]和[mCurrentOffset]，
-         * 所以结合View的长宽就能够判断歌词是否处于可见范围内了，
-         * 不在可见范围内的就只累加高度，跳过相关属性的计算
-         */
         for (i in lyricEntryList.indices) {
-            scale = 1f
+
+            /**
+             * 优化掉不必要的draw, 提升性能表现
+             *
+             * 因为已经有了准确的[mViewPortOffset]和[mCurrentOffset]，
+             * 所以结合View的长宽就能够判断歌词是否处于可见范围内了，
+             * 不在可见范围内的就只累加高度，跳过相关属性的计算
+             */
+            if (getOffset(i) !in (mViewPortOffset - height)..(mViewPortOffset + height)) {
+                lyricEntryList[i].staticLayout?.let {
+                    yOffset += it.height
+                    lyricEntryList[i].secondStaticLayout?.let { second ->
+                        yOffset += translateDividerHeight
+                        yOffset += second.height
+                    }
+                    yOffset += sentenceDividerHeight
+                }
+                continue
+            }
+
+            scaleValue = 1f
             when {
                 // 当前高亮歌词
                 i == currentLine -> {
-                    scale = calcScaleValue(currentTextSize, normalTextSize, animateProgress)
+                    scaleValue = calcScaleValue(currentTextSize, normalTextSize, animateProgress)
                     lyricPaint.color =
                         lerpColor(
                             normalTextColor,
@@ -349,9 +362,9 @@ open class LyricViewX : View, LyricViewXInterface {
                         )
                 }
 
-                // 上一个高亮过的歌词
-                i == lastLine -> {
-                    scale = calcScaleValue(currentTextSize, normalTextSize, animateProgress, true)
+                // 上一个高亮过的歌词，且动画未结束时 (animateProgress != 1f)
+                i == lastLine && animateProgress != 1f -> {
+                    scaleValue = calcScaleValue(currentTextSize, normalTextSize, animateProgress, true)
                     lyricPaint.color =
                         lerpColor(
                             currentTextColor,
@@ -375,14 +388,14 @@ open class LyricViewX : View, LyricViewXInterface {
             secondLyricPaint.color = lyricPaint.color
 
             lyricEntryList[i].staticLayout?.let {
-                drawText(canvas, it, y, scale)
-                y += it.height
+                drawText(canvas, it, yOffset, scaleValue)
+                yOffset += it.height
                 lyricEntryList[i].secondStaticLayout?.let { second ->
-                    y += translateDividerHeight
-                    drawText(canvas, second, y, scale)
-                    y += second.height
+                    yOffset += translateDividerHeight
+                    drawText(canvas, second, yOffset, scaleValue)
+                    yOffset += second.height
                 }
-                y += sentenceDividerHeight
+                yOffset += sentenceDividerHeight
             }
         }
     }
@@ -390,30 +403,50 @@ open class LyricViewX : View, LyricViewXInterface {
     /**
      * 画一行歌词
      *
-     * @param y         歌词中心 Y 坐标
+     * @param yOffset   歌词中心 Y 坐标
      * @param scale     缩放比例
      */
     private fun drawText(
         canvas: Canvas,
         staticLayout: StaticLayout,
-        y: Float,
+        yOffset: Float,
         scale: Float = 1f
     ) {
-        canvas.save()
-        canvas.translate(lrcPadding, y)
+        if (staticLayout.lineCount == 0) return
+        val lineHeight = staticLayout.height.toFloat() / staticLayout.lineCount.toFloat()
 
-        // 根据文字的gravity设置缩放基点坐标
-        when (textGravity) {
-            GRAVITY_LEFT -> canvas.scale(scale, scale, 0f, staticLayout.height / 2f)
-            GRAVITY_RIGHT -> {
-                canvas.scale(scale, scale, staticLayout.width.toFloat(), staticLayout.height / 2f)
+        var yTemp = 0f
+        var pyTemp: Float
+        var bottomTemp: Float
+
+        /**
+         * 由于对StaticLayout整个缩放会使其中间的行间距也被缩放(通过TextPaint的textSize缩放则不会)，
+         * 导致其真实渲染高度大于StaticLayout的height属性的值，同时也没有其他的接口能实现相同的缩放效果(对TextSize缩放会显得卡卡的)
+         *
+         * 所以通过Canvas的clipRect，来分别对StaticLayout的每一行文字进行缩放和绘制(StaticLayout的各行高度是一致的)
+         */
+        repeat(staticLayout.lineCount) {
+            bottomTemp = yTemp + lineHeight
+            pyTemp = bottomTemp - staticLayout.paint.descent()  // TextPaint修改textSize所实现的缩放效果应该就是descent线上的缩放(感觉效果差不多)
+
+            canvas.save()
+            canvas.translate(lrcPadding, yOffset)
+            canvas.clipRect(0f, yTemp, staticLayout.width.toFloat(), bottomTemp)
+
+            // 根据文字的gravity设置缩放基点坐标
+            when (textGravity) {
+                GRAVITY_LEFT -> canvas.scale(scale, scale, 0f, pyTemp)
+                GRAVITY_RIGHT -> {
+                    canvas.scale(scale, scale, staticLayout.width.toFloat(), pyTemp)
+                }
+                GRAVITY_CENTER -> {
+                    canvas.scale(scale, scale, staticLayout.width / 2f, pyTemp)
+                }
             }
-            GRAVITY_CENTER -> {
-                canvas.scale(scale, scale, staticLayout.width / 2f, staticLayout.height / 2f)
-            }
+            staticLayout.draw(canvas)
+            canvas.restore()
+            yTemp += lineHeight
         }
-        staticLayout.draw(canvas)
-        canvas.restore()
     }
 
     @SuppressLint("ClickableViewAccessibility")

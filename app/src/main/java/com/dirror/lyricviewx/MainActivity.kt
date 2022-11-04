@@ -104,8 +104,8 @@ class MainActivity : AppCompatActivity() {
         """.trimIndent()
         lyricViewX.loadLyric(lyric)
         lyricViewX.setTextGravity(GRAVITY_LEFT)
-        lyricViewX.setNormalTextSize(52f)
-        lyricViewX.setCurrentTextSize(64f)
+        lyricViewX.setNormalTextSize(80f)
+        lyricViewX.setCurrentTextSize(100f)
         lyricViewX.setTranslateTextScaleValue(0.8f)
         lyricViewX.setHorizontalOffset(-200f)
 
