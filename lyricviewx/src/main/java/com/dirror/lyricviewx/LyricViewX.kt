@@ -112,42 +112,40 @@ open class LyricViewX @JvmOverloads constructor(
     /**
      * 弹性动画Scroller
      */
-    val springScroller =
-        SpringAnimation(this, object : FloatPropertyCompat<LyricViewX>("mCurrentOffset") {
-            override fun getValue(obj: LyricViewX): Float {
-                return obj.mCurrentOffset
+    private val springScroller = SpringAnimation(this, object : FloatPropertyCompat<LyricViewX>("mCurrentOffset") {
+        override fun getValue(obj: LyricViewX): Float {
+            return obj.mCurrentOffset
+        }
+
+        override fun setValue(obj: LyricViewX, value: Float) {
+            animateProgress = normalize(animateStartOffset, animateTargetOffset, value)
+            obj.mCurrentOffset = value
+
+            if (!isShowTimeline && !isTouching && !isFling) {
+                springScrollerForViewPort.animateToFinalPosition(animateTargetOffset)
             }
+            invalidate()
+        }
+    }, 0f).apply {
+        spring.dampingRatio = mDampingRatioForLyric
+        spring.stiffness = mStiffnessForLyric
+    }
 
-            override fun setValue(obj: LyricViewX, value: Float) {
-                animateProgress = normalize(animateStartOffset, animateTargetOffset, value)
-                obj.mCurrentOffset = value
+    private val springScrollerForViewPort = SpringAnimation(this, object : FloatPropertyCompat<LyricViewX>("mViewPortOffset") {
+        override fun getValue(obj: LyricViewX): Float {
+            return obj.mViewPortOffset
+        }
 
-                if (!isShowTimeline && !isTouching && !isFling) {
-                    springScrollerForViewPort.animateToFinalPosition(animateTargetOffset)
-                }
+        override fun setValue(obj: LyricViewX, value: Float) {
+            if (!isShowTimeline && !isTouching && !isFling) {
+                obj.mViewPortOffset = value
                 invalidate()
             }
-        }, 0f).apply {
-            spring.dampingRatio = mDampingRatioForLyric
-            spring.stiffness = mStiffnessForLyric
         }
-
-    val springScrollerForViewPort =
-        SpringAnimation(this, object : FloatPropertyCompat<LyricViewX>("mViewPortOffset") {
-            override fun getValue(obj: LyricViewX): Float {
-                return obj.mViewPortOffset
-            }
-
-            override fun setValue(obj: LyricViewX, value: Float) {
-                if (!isShowTimeline && !isTouching && !isFling) {
-                    obj.mViewPortOffset = value
-                    invalidate()
-                }
-            }
-        }, 0f).apply {
-            spring.dampingRatio = mDampingRatioForViewPort
-            spring.stiffness = mStiffnessForViewPort
-        }
+    }, 0f).apply {
+        spring.dampingRatio = mDampingRatioForViewPort
+        spring.stiffness = mStiffnessForViewPort
+    }
 
     @SuppressLint("CustomViewStyleable")
     private fun init(attrs: AttributeSet?) {
@@ -917,6 +915,10 @@ open class LyricViewX @JvmOverloads constructor(
 
     override fun setStiffnessForViewPort(stiffness: Float) {
         springScrollerForViewPort.spring.stiffness = stiffness
+    }
+
+    override fun setPlayDrawable(drawable: Drawable) {
+        playDrawable = drawable
     }
 
     companion object {

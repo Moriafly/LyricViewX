@@ -1,6 +1,7 @@
 package com.dirror.lyricviewx
 
 import android.graphics.Typeface
+import android.graphics.drawable.Drawable
 import android.text.Layout
 import androidx.annotation.ColorInt
 import androidx.annotation.FloatRange
@@ -220,6 +221,11 @@ interface LyricViewXInterface {
      * @param stiffness 刚度 详见[androidx.dynamicanimation.animation.SpringForce]
      */
     fun setStiffnessForViewPort(stiffness: Float)
+
+    /**
+     * 设置跳转播放按钮
+     */
+    fun setPlayDrawable(drawable: Drawable)
 }
 
 /**
