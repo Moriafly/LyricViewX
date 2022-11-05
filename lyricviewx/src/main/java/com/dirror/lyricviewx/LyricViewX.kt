@@ -39,6 +39,7 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import android.text.format.DateUtils
 import android.util.AttributeSet
+import android.util.Log
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
@@ -486,8 +487,11 @@ open class LyricViewX : View, LyricViewXInterface {
                 distanceY: Float
             ): Boolean {
                 if (hasLrc()) {
-                    // 滚动显示时间线
-                    isShowTimeline = true
+                    // 如果没显示 Timeline 的时候，distanceY 一段距离后再显示时间线
+                    if (!isShowTimeline && abs(distanceY) >= 10) {
+                        // 滚动显示时间线
+                        isShowTimeline = true
+                    }
                     mViewPortOffset += -distanceY
                     mViewPortOffset.coerceIn(getOffset(lyricEntryList.size - 1), getOffset(0))
                     invalidate()
@@ -930,6 +934,8 @@ open class LyricViewX : View, LyricViewXInterface {
     }
 
     companion object {
+
+        private const val TAG = "LyricViewX"
 
         // 时间线持续时间
         private const val TIMELINE_KEEP_TIME = 3 * DateUtils.SECOND_IN_MILLIS
