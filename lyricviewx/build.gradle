@@ -13,8 +13,8 @@ android {
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 32
-        versionCode 16
-        versionName "1.3.2"
+        versionCode 17
+        versionName "1.4.0-alpha01"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -56,7 +56,7 @@ afterEvaluate {
 
                 groupId = 'com.github.Moriafly'
                 artifactId = 'LyricViewX'
-                version = '1.3.2'
+                version = '1.4.0-alpha01'
             }
         }
     }
