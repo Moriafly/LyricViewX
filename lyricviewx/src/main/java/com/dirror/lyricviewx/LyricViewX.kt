@@ -393,8 +393,14 @@ open class LyricViewX : View, LyricViewXInterface {
                 yOffset += it.height
                 lyricEntryList[i].secondStaticLayout?.let { second ->
                     yOffset += translateDividerHeight
-                    drawText(canvas, second, yOffset, scaleValue)
-                    yOffset += second.height
+                    if (i == currentLine) {
+                        drawText(canvas, second, yOffset, scaleValue)
+                        yOffset += second.height
+                    } else {
+                        drawText(canvas, second, yOffset - abs(currentTextSize - normalTextSize), scaleValue)
+                        yOffset += second.height
+                        yOffset -= abs(currentTextSize - normalTextSize)
+                    }
                 }
                 yOffset += sentenceDividerHeight
             }
@@ -588,11 +594,11 @@ open class LyricViewX : View, LyricViewXInterface {
             return
         }
         /**
-         * StaticLayout 根据初始化时传入的TextSize计算换行的位置
+         * StaticLayout 根据初始化时传入的 TextSize 计算换行的位置
          * 如果 [currentTextSize] 与 [normalTextSize] 相差较大，
          * 则会导致歌词渲染时溢出边界，或行间距不足挤压在一起
          *
-         * 故计算出可能的最大TextSize以后，用其初始化，使StaticLayout拥有足够的高度
+         * 故计算出可能的最大 TextSize 以后，用其初始化，使 StaticLayout 拥有足够的高度
          */
         lyricPaint.textSize = max(currentTextSize, normalTextSize)
         secondLyricPaint.textSize = lyricPaint.textSize * translateTextScaleValue
