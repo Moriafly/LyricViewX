@@ -13,27 +13,6 @@ import android.text.TextPaint
  */
 class LyricEntry(val time: Long, val text: String) : Comparable<LyricEntry> {
 
-    companion object {
-        fun createStaticLayout(
-            text: String?,
-            paint: TextPaint,
-            width: Number,
-            align: Layout.Alignment
-        ): StaticLayout? {
-            if (text == null || text.isEmpty()) return null
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                StaticLayout.Builder
-                    .obtain(text, 0, text.length, paint, width.toInt())
-                    .setAlignment(align)
-                    .setLineSpacing(0f, 1f)
-                    .setIncludePad(false)
-                    .build()
-            } else {
-                StaticLayout(text, paint, width.toInt(), align, 1f, 0f, false)
-            }
-        }
-    }
-
     /**
      * 第二文本
      */
@@ -76,6 +55,27 @@ class LyricEntry(val time: Long, val text: String) : Comparable<LyricEntry> {
      */
     override fun compareTo(other: LyricEntry): Int {
         return (time - other.time).toInt()
+    }
+
+    companion object {
+        fun createStaticLayout(
+            text: String?,
+            paint: TextPaint,
+            width: Number,
+            align: Layout.Alignment
+        ): StaticLayout? {
+            if (text == null || text.isEmpty()) return null
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                StaticLayout.Builder
+                    .obtain(text, 0, text.length, paint, width.toInt())
+                    .setAlignment(align)
+                    .setLineSpacing(0f, 1f)
+                    .setIncludePad(false)
+                    .build()
+            } else {
+                StaticLayout(text, paint, width.toInt(), align, 1f, 0f, false)
+            }
+        }
     }
 
 }
