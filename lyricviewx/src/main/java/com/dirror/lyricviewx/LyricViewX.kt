@@ -39,7 +39,7 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import android.text.format.DateUtils
 import android.util.AttributeSet
-import android.util.Log
+import android.util.LruCache
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
@@ -67,7 +67,7 @@ import kotlin.math.max
  * Thanks:
  * https://github.com/cy745
  */
-open class LyricViewX : View, LyricViewXInterface {
+open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
     constructor(context: Context) : super(context) {
         init(null)
     }
@@ -134,6 +134,13 @@ open class LyricViewX : View, LyricViewXInterface {
             field = value
         }
 
+    override val currentIndex: Int
+        get() = currentLine
+
+    override fun onPostInvalidate() {
+        postInvalidate()
+    }
+
     /**
      * 原有的mOffset被拆分成两个独立的offset，这样可以更好地让进度和拖拽滚动独立开来
      */
@@ -143,6 +150,9 @@ open class LyricViewX : View, LyricViewXInterface {
     private var animateProgress = 0f            // 动画进度
     private var animateTargetOffset = 0f        // 动画目标Offset
     private var animateStartOffset = 0f         // 动画起始Offset
+
+    override var needPostInvalidate: Boolean = false
+    override val progressMap: LruCache<Int, Float> = LruCache(50)
 
     /**
      * 弹性动画Scroller
@@ -328,6 +338,7 @@ open class LyricViewX : View, LyricViewXInterface {
 
         var yOffset = 0f
         var scaleValue: Float
+        var progress: Float
 
         for (i in lyricEntryList.indices) {
 
@@ -350,36 +361,27 @@ open class LyricViewX : View, LyricViewXInterface {
                 continue
             }
 
+            /**
+             * 由于前面已经排除掉了不在可见范围内的歌词，
+             * 所以实际需要更新进度的只有最多十句左右，
+             * 需要根据实际需要保存的进度个数确保指定的LruCache的大小不能过小，
+             * 否则还是会出现进度丢失的问题
+             *
+             */
+            updateProgress(i, animateProgress)
             scaleValue = 1f
+            progress = getProgressByIndex(i)
+
             when {
-                // 当前高亮歌词
-                i == currentLine -> {
-                    scaleValue = calcScaleValue(currentTextSize, normalTextSize, animateProgress)
-                    lyricPaint.color =
-                        lerpColor(
-                            normalTextColor,
-                            currentTextColor,
-                            animateProgress.coerceIn(0f, 1f)
-                        )
+                progress > 0f -> {
+                    scaleValue = calcScaleValue(currentTextSize, normalTextSize, progress)
+                    lyricPaint.color = lerpColor(normalTextColor, currentTextColor, progress.coerceIn(0f, 1f))
                 }
 
-                // 上一个高亮过的歌词，且动画未结束时 (animateProgress != 1f)
-                i == lastLine && animateProgress != 1f -> {
-                    scaleValue = calcScaleValue(currentTextSize, normalTextSize, animateProgress, true)
-                    lyricPaint.color =
-                        lerpColor(
-                            currentTextColor,
-                            normalTextColor,
-                            animateProgress.coerceIn(0f, 1f)
-                        )
-                }
-
-                // 中心时间线选中的歌词
                 isShowTimeline && i == centerLine -> {
                     lyricPaint.color = timelineTextColor
                 }
 
-                // 其他歌词
                 else -> {
                     lyricPaint.color = normalTextColor
                 }
@@ -393,18 +395,24 @@ open class LyricViewX : View, LyricViewXInterface {
                 yOffset += it.height
                 lyricEntryList[i].secondStaticLayout?.let { second ->
                     yOffset += translateDividerHeight
-                    if (i == currentLine) {
-                        drawText(canvas, second, yOffset, scaleValue)
-                        yOffset += second.height
-                    } else {
-                        drawText(canvas, second, yOffset - abs(currentTextSize - normalTextSize), scaleValue)
-                        yOffset += second.height
-                        yOffset -= abs(currentTextSize - normalTextSize)
-                    }
+                    drawText(canvas, second, yOffset, scaleValue)
+                    yOffset += second.height
+                    // 这一段代码会导致歌词过渡时会抽动，暂时注释掉
+//                    if (i == currentLine) {
+//                        drawText(canvas, second, yOffset, scaleValue)
+//                        yOffset += second.height
+//                    } else {
+//                        drawText(canvas, second, yOffset - abs(currentTextSize - normalTextSize), scaleValue)
+//                        yOffset += second.height
+//                        yOffset -= abs(currentTextSize - normalTextSize)
+//                    }
                 }
                 yOffset += sentenceDividerHeight
             }
         }
+
+        // 后处理，当某一句歌词的进度未达到其目标值时，需要继续刷新
+        onProgressPostHandle()
     }
 
     /**
@@ -446,6 +454,7 @@ open class LyricViewX : View, LyricViewXInterface {
                 GRAVITY_RIGHT -> {
                     canvas.scale(scale, scale, staticLayout.width.toFloat(), pyTemp)
                 }
+
                 GRAVITY_CENTER -> {
                     canvas.scale(scale, scale, staticLayout.width / 2f, pyTemp)
                 }
