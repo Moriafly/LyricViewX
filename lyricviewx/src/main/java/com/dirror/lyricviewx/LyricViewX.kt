@@ -126,14 +126,7 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
     private var stiffnessForLyric: Float = SpringForce.STIFFNESS_LOW
     private var stiffnessForViewPort: Float = SpringForce.STIFFNESS_VERY_LOW
 
-    private var lastLine = -1              // 上一次高亮显示的歌词
     private var currentLine = 0            // 当前高亮显示的歌词
-        set(value) {
-            if (field == value) return      // 只有当新的值与现在不同时才做修改，避免mCurrentLine与mLastLine相等
-            lastLine = field
-            field = value
-        }
-
     override val currentIndex: Int
         get() = currentLine
 
