@@ -2,6 +2,7 @@ package com.dirror.lyricviewx
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -9,6 +10,15 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val lyricViewX = findViewById<LyricViewX>(R.id.lyricViewX)
+        val drawTranslationCheckBox = findViewById<SwitchCompat>(R.id.switchTranslation)
+        val enableBlurEffectCheckBox = findViewById<SwitchCompat>(R.id.enableBlurEffect)
+
+        drawTranslationCheckBox.setOnCheckedChangeListener { buttonView, isChecked ->
+            lyricViewX.setIsDrawTranslation(isChecked)
+        }
+        enableBlurEffectCheckBox.setOnCheckedChangeListener { buttonView, isChecked ->
+            lyricViewX.setIsEnableBlurEffect(isChecked)
+        }
 
         val lyric = """
             [by:花丸的蜜柑面包]

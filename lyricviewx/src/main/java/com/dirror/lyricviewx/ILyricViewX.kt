@@ -207,6 +207,16 @@ interface LyricViewXInterface {
      * 设置跳转播放按钮
      */
     fun setPlayDrawable(drawable: Drawable)
+
+    /**
+     * 设置是否绘制歌词翻译
+     */
+    fun setIsDrawTranslation(isDrawTranslation: Boolean)
+
+    /**
+     * 是否开启特定的模糊效果
+     */
+    fun setIsEnableBlurEffect(isEnableBlurEffect: Boolean)
 }
 
 /**

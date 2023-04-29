@@ -39,21 +39,22 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import android.text.format.DateUtils
 import android.util.AttributeSet
-import android.util.LruCache
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
-import android.view.View
 import android.widget.Scroller
 import androidx.core.content.ContextCompat
-import androidx.dynamicanimation.animation.FloatPropertyCompat
-import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
 import com.dirror.lyricviewx.LyricUtil.calcScaleValue
 import com.dirror.lyricviewx.LyricUtil.formatTime
 import com.dirror.lyricviewx.LyricUtil.insideOf
 import com.dirror.lyricviewx.LyricUtil.lerpColor
 import com.dirror.lyricviewx.LyricUtil.normalize
+import com.dirror.lyricviewx.extension.BlurMaskFilterExt
+import com.dirror.lyricviewx.extension.SpringExt
+import com.lalilu.easeview.EaseView
+import com.lalilu.easeview.animatevalue.BoolValue
+import com.lalilu.easeview.animatevalue.FloatListAnimateValue
 import java.io.File
 import kotlin.concurrent.thread
 import kotlin.math.abs
@@ -67,7 +68,7 @@ import kotlin.math.max
  * Thanks:
  * https://github.com/cy745
  */
-open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
+open class LyricViewX : EaseView, LyricViewXInterface {
     constructor(context: Context) : super(context) {
         init(null)
     }
@@ -77,6 +78,7 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
     }
 
     protected val readyHelper = ReadyHelper()
+    private val blurMaskFilterExt = BlurMaskFilterExt()
 
     /** 单句歌词集合 */
     private val lyricEntryList: MutableList<LyricEntry> = ArrayList()
@@ -116,7 +118,6 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
     private var gestureDetector: GestureDetector? = null
     private var scroller: Scroller? = null
     private var flag: Any? = null
-    private var isShowTimeline = false
     private var isTouching = false
     private var isFling = false
     private var textGravity = GRAVITY_CENTER // 歌词显示位置，靠左 / 居中 / 靠右
@@ -127,12 +128,40 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
     private var stiffnessForViewPort: Float = SpringForce.STIFFNESS_VERY_LOW
 
     private var currentLine = 0            // 当前高亮显示的歌词
-    override val currentIndex: Int
-        get() = currentLine
+    private val focusLine: Int             // 当前焦点歌词
+        get() = if (isTouching || isFling) centerLine else currentLine
 
-    override fun onPostInvalidate() {
-        postInvalidate()
-    }
+    /**
+     * 获取当前在视图中央的行数
+     */
+    private val centerLine: Int
+        get() {
+            var centerLine = 0
+            var minDistance = Float.MAX_VALUE
+            var tempDistance: Float
+
+            for (i in lyricEntryList.indices) {
+                tempDistance = abs(mViewPortOffset - getOffset(i))
+                if (tempDistance < minDistance) {
+                    minDistance = tempDistance
+                    centerLine = i
+                }
+            }
+            return centerLine
+        }
+
+    /**
+     * 获取歌词宽度
+     */
+    open val lrcWidth: Float
+        get() = width - lrcPadding * 2
+
+    /**
+     * 歌词整体的垂直偏移值
+     */
+    open val startOffset: Float
+        get() = height.toFloat() / 2f + horizontalOffset
+
 
     /**
      * 原有的mOffset被拆分成两个独立的offset，这样可以更好地让进度和拖拽滚动独立开来
@@ -144,46 +173,37 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
     private var animateTargetOffset = 0f        // 动画目标Offset
     private var animateStartOffset = 0f         // 动画起始Offset
 
-    override var needPostInvalidate: Boolean = false
-    override val progressMap: LruCache<Int, Float> = LruCache(50)
+    private val viewPortSpringAnimator = SpringExt.of(this)
+        .setDampingRatio(dampingRatioForViewPort)
+        .setStiffness(stiffnessForViewPort)
+        .setDefaultValue(0f)
+        .onGet { mViewPortOffset }
+        .onSet { value ->
+            if (!isShowTimeline.value && !isTouching && !isFling) {
+                mViewPortOffset = value
+                invalidate()
+            }
+        }
+        .build()
 
     /**
      * 弹性动画Scroller
      */
-    private val springScroller = SpringAnimation(this, object : FloatPropertyCompat<LyricViewX>("mCurrentOffset") {
-        override fun getValue(obj: LyricViewX): Float {
-            return obj.mCurrentOffset
-        }
-
-        override fun setValue(obj: LyricViewX, value: Float) {
+    private val progressSpringAnimator = SpringExt.of(this)
+        .setDampingRatio(dampingRatioForLyric)
+        .setStiffness(stiffnessForLyric)
+        .setDefaultValue(0f)
+        .onGet { mCurrentOffset }
+        .onSet { value ->
             animateProgress = normalize(animateStartOffset, animateTargetOffset, value)
-            obj.mCurrentOffset = value
+            mCurrentOffset = value
 
-            if (!isShowTimeline && !isTouching && !isFling) {
-                springScrollerForViewPort.animateToFinalPosition(animateTargetOffset)
+            if (!isShowTimeline.value && !isTouching && !isFling) {
+                viewPortSpringAnimator.animateToFinalPosition(animateTargetOffset)
             }
             invalidate()
         }
-    }, 0f).apply {
-        spring.dampingRatio = dampingRatioForLyric
-        spring.stiffness = stiffnessForLyric
-    }
-
-    private val springScrollerForViewPort = SpringAnimation(this, object : FloatPropertyCompat<LyricViewX>("mViewPortOffset") {
-        override fun getValue(obj: LyricViewX): Float {
-            return obj.mViewPortOffset
-        }
-
-        override fun setValue(obj: LyricViewX, value: Float) {
-            if (!isShowTimeline && !isTouching && !isFling) {
-                obj.mViewPortOffset = value
-                invalidate()
-            }
-        }
-    }, 0f).apply {
-        spring.dampingRatio = dampingRatioForViewPort
-        spring.stiffness = stiffnessForViewPort
-    }
+        .build()
 
     @SuppressLint("CustomViewStyleable")
     private fun init(attrs: AttributeSet?) {
@@ -289,143 +309,217 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
         readyHelper.readyState = STATE_INITIALIZED
     }
 
-    /**
-     * 绘制
-     */
-    @SuppressLint("DrawAllocation")
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
+    private val isShowTimeline = BoolValue().also(::registerValue)
+    private val isEnableBlurEffect = BoolValue().also(::registerValue)
+    private val progressKeeper = FloatListAnimateValue().also(::registerValue)
+    private val blurProgressKeeper = FloatListAnimateValue().also(::registerValue)
+    private val isDrawTranslation = BoolValue(precision = 0.001f, stepPercent = 0.05f).also(::registerValue)
+
+    private val heightKeeper = LinkedHashMap<Int, Float>()
+    private val offsetKeeper = LinkedHashMap<Int, Float>()
+
+    override fun onPreDraw(canvas: Canvas): Boolean {
         val centerY = startOffset
-        // 无歌词
+
+        // 无歌词，只渲染一句无歌词的提示语句
         if (!hasLrc()) {
             lyricPaint.color = currentTextColor
-            LyricEntry.createStaticLayout(
+            val staticLayout = LyricEntry.createStaticLayout(
                 defaultLabel,
                 lyricPaint,
                 lrcWidth,
                 Layout.Alignment.ALIGN_CENTER
-            )?.let {
-                drawText(canvas, it, centerY)
-            }
-            return
-        }
-        // 歌词有效
-        val centerLine = centerLine
-        if (isShowTimeline) {
-            playDrawable!!.draw(canvas)
-            timePaint.color = timelineColor
-            canvas.drawLine(
-                timeTextWidth.toFloat(),
-                centerY,
-                (width - timeTextWidth).toFloat(),
-                centerY,
-                timePaint
+            ) ?: return false
+            drawText(
+                canvas = canvas,
+                staticLayout = staticLayout,
+                calcHeightOnly = false,
+                yOffset = centerY,
+                yClipPercentage = 1f
             )
-            timePaint.color = timeTextColor
-            val timeText = formatTime(lyricEntryList[centerLine].time)
+            return false
+        }
+        return super.onPreDraw(canvas)
+    }
+
+    override fun onDoDraw(canvas: Canvas): Boolean {
+        val centerY = startOffset
+        val currentCenterLine = centerLine
+
+        // 当显示时间线时，需要绘制时间线
+        if (isShowTimeline.value || isShowTimeline.animateValue > 0f) {
+            val alpha = (isShowTimeline.animateValue * 255f).toInt()
+
+            // 绘制播放按钮
+            playDrawable?.let {
+                it.alpha = alpha
+                it.draw(canvas)
+            }
+
+            // 绘制时间线
+            timePaint.color = timelineColor
+            timePaint.alpha = alpha
+            canvas.drawLine(
+                timeTextWidth.toFloat(), centerY,
+                (width - timeTextWidth).toFloat(), centerY, timePaint
+            )
+
+            // 绘制当前时间
+            val timeText = formatTime(lyricEntryList[currentCenterLine].time)
             val timeX = width - timeTextWidth.toFloat() / 2
             val timeY = centerY - (timeFontMetrics!!.descent + timeFontMetrics!!.ascent) / 2
+            timePaint.color = timeTextColor
+            timePaint.alpha = alpha
             canvas.drawText(timeText, timeX, timeY, timePaint)
         }
+
+        // TODO 待解决绘制高度变化时 mViewPortOffset 不同步的问题
         canvas.translate(0f, mViewPortOffset)
 
         var yOffset = 0f
         var scaleValue: Float
         var progress: Float
+        var radius: Int
+        var calcHeightOnly: Boolean
 
         for (i in lyricEntryList.indices) {
-
-            /**
-             * 优化掉不必要的draw, 提升性能表现
-             *
-             * 因为已经有了准确的[mViewPortOffset]和[mCurrentOffset]，
-             * 所以结合View的长宽就能够判断歌词是否处于可见范围内了，
-             * 不在可见范围内的就只累加高度，跳过相关属性的计算
-             */
-            if (getOffset(i) !in (mViewPortOffset - height)..(mViewPortOffset + height)) {
-                lyricEntryList[i].staticLayout?.let {
-                    yOffset += it.height
-                    lyricEntryList[i].secondStaticLayout?.let { second ->
-                        yOffset += translateDividerHeight
-                        yOffset += second.height
-                    }
-                    yOffset += sentenceDividerHeight
-                }
-                continue
-            }
-
-            /**
-             * 由于前面已经排除掉了不在可见范围内的歌词，
-             * 所以实际需要更新进度的只有最多十句左右，
-             * 需要根据实际需要保存的进度个数确保指定的LruCache的大小不能过小，
-             * 否则还是会出现进度丢失的问题
-             *
-             */
-            updateProgress(i, animateProgress)
+            // 根据上一项所计算得到的offset值，判断当前元素是否在需要绘制的区间，如果不在，则只需要计算高度不进行绘制相关计算
+            calcHeightOnly = getOffset(i - 1) !in (mViewPortOffset - height)..(mViewPortOffset + height)
+            progressKeeper.updateTargetValue(i, if (currentLine == i) animateProgress else 0f)
+            progress = progressKeeper.getValueByIndex(i)
             scaleValue = 1f
-            progress = getProgressByIndex(i)
+            radius = 0
 
-            when {
-                progress > 0f -> {
-                    scaleValue = calcScaleValue(currentTextSize, normalTextSize, progress)
-                    lyricPaint.color = lerpColor(normalTextColor, currentTextColor, progress.coerceIn(0f, 1f))
+            if (!calcHeightOnly) {
+                when {
+                    // 当前行动画未结束
+                    progress > 0f -> {
+                        scaleValue = calcScaleValue(currentTextSize, normalTextSize, progress)
+                        lyricPaint.color = lerpColor(normalTextColor, currentTextColor, progress.coerceIn(0f, 1f))
+                    }
+
+                    isShowTimeline.value && i == currentCenterLine -> {
+                        lyricPaint.color = timelineTextColor
+                    }
+
+                    else -> {
+                        lyricPaint.color = normalTextColor
+                    }
                 }
+                lyricPaint.textSize = normalTextSize
+                secondLyricPaint.textSize = lyricPaint.textSize * translateTextScaleValue
+                secondLyricPaint.color = lyricPaint.color
 
-                isShowTimeline && i == centerLine -> {
-                    lyricPaint.color = timelineTextColor
-                }
-
-                else -> {
-                    lyricPaint.color = normalTextColor
+                if (isEnableBlurEffect.value || isEnableBlurEffect.animateValue > 0f) {
+                    radius = when (i) {
+                        currentCenterLine -> 0
+                        currentCenterLine + 1 -> 3
+                        currentCenterLine + 2, currentCenterLine - 1 -> 7
+                        currentCenterLine + 3, currentCenterLine - 2 -> 11
+                        currentCenterLine + 4, currentCenterLine - 3 -> 20
+                        else -> 20
+                    }
+                    blurProgressKeeper.updateTargetValue(i, radius.toFloat())
+                    radius = blurProgressKeeper.getValueByIndex(i).toInt()
+                    radius = (radius * isEnableBlurEffect.animateValue).toInt()
                 }
             }
-            lyricPaint.textSize = normalTextSize
-            secondLyricPaint.textSize = lyricPaint.textSize * translateTextScaleValue
-            secondLyricPaint.color = lyricPaint.color
 
-            lyricEntryList[i].staticLayout?.let {
-                drawText(canvas, it, yOffset, scaleValue)
-                yOffset += it.height
-                lyricEntryList[i].secondStaticLayout?.let { second ->
-                    yOffset += translateDividerHeight
-                    drawText(canvas, second, yOffset, scaleValue)
-                    yOffset += second.height
-                    // 这一段代码会导致歌词过渡时会抽动，暂时注释掉
-//                    if (i == currentLine) {
-//                        drawText(canvas, second, yOffset, scaleValue)
-//                        yOffset += second.height
-//                    } else {
-//                        drawText(canvas, second, yOffset - abs(currentTextSize - normalTextSize), scaleValue)
-//                        yOffset += second.height
-//                        yOffset -= abs(currentTextSize - normalTextSize)
-//                    }
-                }
-                yOffset += sentenceDividerHeight
-            }
+            val itemHeight = drawLyricEntry(
+                canvas = canvas,
+                entry = lyricEntryList[i],
+                calcHeightOnly = calcHeightOnly,
+                yOffset = yOffset,
+                scaleValue = scaleValue,
+                blurRadius = radius
+            )
+            heightKeeper[i] = itemHeight
+            offsetKeeper[i] = yOffset + (itemHeight - sentenceDividerHeight) / 2
+            yOffset += itemHeight
         }
+        return super.onDoDraw(canvas)
+    }
 
-        // 后处理，当某一句歌词的进度未达到其目标值时，需要继续刷新
-        onProgressPostHandle()
+    /**
+     * 画一组歌词语句
+     *
+     * @param calcHeightOnly    是否只计算高度
+     * @param yOffset           歌词中心 Y 坐标
+     * @param scaleValue        缩放比例
+     * @param blurRadius        模糊半径
+     *
+     * @return 该组歌词的实际绘制高度
+     */
+    private fun drawLyricEntry(
+        canvas: Canvas,
+        entry: LyricEntry,
+        calcHeightOnly: Boolean,
+        yOffset: Float,
+        scaleValue: Float,
+        blurRadius: Int
+    ): Float {
+        var tempHeight = 0f
+        entry.staticLayout?.let {
+            tempHeight += drawText(
+                canvas = canvas,
+                staticLayout = it,
+                calcHeightOnly = calcHeightOnly,
+                yOffset = yOffset,
+                yClipPercentage = 1f,
+                scale = scaleValue,
+                blurRadius = blurRadius
+            )
+            entry.secondStaticLayout?.let { second ->
+                tempHeight += translateDividerHeight * isDrawTranslation.animateValue
+                tempHeight += drawText(
+                    canvas = canvas,
+                    staticLayout = second,
+                    calcHeightOnly = calcHeightOnly,
+                    yOffset = yOffset + tempHeight,
+                    yClipPercentage = isDrawTranslation.animateValue,
+                    alpha = isDrawTranslation.animateValue,
+                    scale = scaleValue,
+                    blurRadius = blurRadius
+                )
+            }
+            tempHeight += sentenceDividerHeight
+        }
+        return tempHeight
     }
 
     /**
      * 画一行歌词
      *
-     * @param yOffset   歌词中心 Y 坐标
-     * @param scale     缩放比例
+     * @param calcHeightOnly    是否只计算高度
+     * @param yOffset           歌词中心 Y 坐标
+     * @param yClipPercentage   垂直裁剪比例
+     * @param scale             缩放比例
+     * @param alpha             透明度
+     * @param blurRadius        模糊半径 实现类似AppleMusic的歌词语句的模糊效果
+     *
+     * @return 实际绘制高度
      */
     private fun drawText(
         canvas: Canvas,
         staticLayout: StaticLayout,
+        calcHeightOnly: Boolean = false,
         yOffset: Float,
-        scale: Float = 1f
-    ) {
-        if (staticLayout.lineCount == 0) return
+        yClipPercentage: Float,
+        scale: Float = 1f,
+        alpha: Float = 1f,
+        blurRadius: Int = 0
+    ): Float {
+        if (staticLayout.lineCount == 0) return 0f
+        if (calcHeightOnly) return staticLayout.height * yClipPercentage
         val lineHeight = staticLayout.height.toFloat() / staticLayout.lineCount.toFloat()
 
-        var yTemp = 0f
-        var pyTemp: Float
-        var bottomTemp: Float
+        var yTemp = 0f                  // y轴临时偏移量
+        var pivotYTemp: Float           // 缩放中心Y坐标
+        var itemActualHeight: Float     // 单行实际绘制高度
+        var actualHeight = 0f           // 实际绘制高度
+
+        staticLayout.paint.alpha = (alpha * 255f).toInt()
+        staticLayout.paint.maskFilter = blurMaskFilterExt.get(blurRadius)
 
         /**
          * 由于对StaticLayout整个缩放会使其中间的行间距也被缩放(通过TextPaint的textSize缩放则不会)，
@@ -434,28 +528,30 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
          * 所以通过Canvas的clipRect，来分别对StaticLayout的每一行文字进行缩放和绘制(StaticLayout的各行高度是一致的)
          */
         repeat(staticLayout.lineCount) {
-            bottomTemp = yTemp + lineHeight
-            pyTemp = bottomTemp - staticLayout.paint.descent()  // TextPaint修改textSize所实现的缩放效果应该就是descent线上的缩放(感觉效果差不多)
+            itemActualHeight = lineHeight * yClipPercentage
+            pivotYTemp = yTemp + itemActualHeight - staticLayout.paint.descent()  // TextPaint修改textSize所实现的缩放效果应该就是descent线上的缩放(感觉效果差不多)
 
             canvas.save()
             canvas.translate(lrcPadding, yOffset)
-            canvas.clipRect(0f, yTemp, staticLayout.width.toFloat(), bottomTemp)
+            canvas.clipRect(-lrcPadding, yTemp, staticLayout.width.toFloat() + lrcPadding, yTemp + itemActualHeight)
 
             // 根据文字的gravity设置缩放基点坐标
             when (textGravity) {
-                GRAVITY_LEFT -> canvas.scale(scale, scale, 0f, pyTemp)
+                GRAVITY_LEFT -> canvas.scale(scale, scale, 0f, pivotYTemp)
                 GRAVITY_RIGHT -> {
-                    canvas.scale(scale, scale, staticLayout.width.toFloat(), pyTemp)
+                    canvas.scale(scale, scale, staticLayout.width.toFloat(), pivotYTemp)
                 }
 
                 GRAVITY_CENTER -> {
-                    canvas.scale(scale, scale, staticLayout.width / 2f, pyTemp)
+                    canvas.scale(scale, scale, staticLayout.width / 2f, pivotYTemp)
                 }
             }
             staticLayout.draw(canvas)
             canvas.restore()
-            yTemp += lineHeight
+            yTemp += itemActualHeight
+            actualHeight += itemActualHeight
         }
+        return actualHeight
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -496,9 +592,9 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
             ): Boolean {
                 if (hasLrc()) {
                     // 如果没显示 Timeline 的时候，distanceY 一段距离后再显示时间线
-                    if (!isShowTimeline && abs(distanceY) >= 10) {
+                    if (!isShowTimeline.value && abs(distanceY) >= 10) {
                         // 滚动显示时间线
-                        isShowTimeline = true
+                        isShowTimeline.value = true
                     }
                     mViewPortOffset += -distanceY
                     mViewPortOffset.coerceIn(getOffset(lyricEntryList.size - 1), getOffset(0))
@@ -528,7 +624,7 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
             }
 
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                if (!hasLrc() || !isShowTimeline || !e.insideOf(playDrawable?.bounds)) {
+                if (!hasLrc() || !isShowTimeline.value || !e.insideOf(playDrawable?.bounds)) {
                     onSingerClickListener?.onClick()
                     return super.onSingleTapConfirmed(e)
                 }
@@ -537,9 +633,9 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
                 val centerLineTime = lyricEntryList[centerLine].time
                 // onPlayClick 消费了才更新 UI
                 if (onPlayClickListener?.onPlayClick(centerLineTime) == true) {
-                    isShowTimeline = false
+                    isShowTimeline.value = false
                     removeCallbacks(hideTimelineRunnable)
-                    springScrollerForViewPort.animateToFinalPosition(getOffset(centerLine))
+                    viewPortSpringAnimator.animateToFinalPosition(getOffset(centerLine))
                     invalidate()
                     return true
                 }
@@ -548,9 +644,9 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
         }
 
     private val hideTimelineRunnable = Runnable {
-        if (hasLrc() && isShowTimeline) {
-            isShowTimeline = false
-            springScrollerForViewPort.animateToFinalPosition(mCurrentOffset)
+        if (hasLrc() && isShowTimeline.value) {
+            isShowTimeline.value = false
+            viewPortSpringAnimator.animateToFinalPosition(mCurrentOffset)
             smoothScrollTo(currentLine)
         }
     }
@@ -617,7 +713,7 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
     private fun reset() {
         // TODO 待完善reset的逻辑
         scroller!!.forceFinished(true)
-        isShowTimeline = false
+        isShowTimeline.value = false
         isTouching = false
         isFling = false
         removeCallbacks(hideTimelineRunnable)
@@ -632,7 +728,7 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
      * 将中心行微调至正中心
      */
     private fun adjustCenter() {
-        springScrollerForViewPort.animateToFinalPosition(mCurrentOffset)
+        viewPortSpringAnimator.animateToFinalPosition(mCurrentOffset)
     }
 
     /**
@@ -644,7 +740,7 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
         val offset = getOffset(line)
         animateStartOffset = mCurrentOffset
         animateTargetOffset = offset
-        springScroller.animateToFinalPosition(offset)
+        progressSpringAnimator.animateToFinalPosition(offset)
     }
 
     /**
@@ -669,26 +765,11 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
     }
 
     /**
-     * 获取当前在视图中央的行数
-     */
-    private val centerLine: Int
-        get() {
-            var centerLine = 0
-            var minDistance = Float.MAX_VALUE
-            for (i in lyricEntryList.indices) {
-                if (abs(mViewPortOffset - getOffset(i)) < minDistance) {
-                    minDistance = abs(mViewPortOffset - getOffset(i))
-                    centerLine = i
-                }
-            }
-            return centerLine
-        }
-
-    /**
      * 因为添加了 [translateDividerHeight] 用来间隔开歌词与翻译，
      * 所以直接从 [LyricEntry] 获取高度不可行，
      * 故使用该 [getLyricHeight] 方法来计算 [LyricEntry] 的高度
      */
+    @Deprecated("不再单独计算歌词的高度，在绘制时计算并进行更新缓存，所见即所得")
     open fun getLyricHeight(line: Int): Int {
         var height = lyricEntryList[line].staticLayout?.height ?: return 0
         lyricEntryList[line].secondStaticLayout?.height?.let {
@@ -699,30 +780,10 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
 
     /**
      * 获取歌词距离视图顶部的距离
-     * 采用懒加载方式
      */
     private fun getOffset(line: Int): Float {
-        if (lyricEntryList[line].offset == Float.MIN_VALUE) {
-            var offset = startOffset
-            for (i in 1..line) {
-                offset -= (getLyricHeight(i - 1) + getLyricHeight(i) shr 1) + sentenceDividerHeight
-            }
-            lyricEntryList[line].offset = offset
-        }
-        return lyricEntryList[line].offset
+        return startOffset - (offsetKeeper[line] ?: 0f)
     }
-
-    /**
-     * 获取歌词宽度
-     */
-    open val lrcWidth: Float
-        get() = width - lrcPadding * 2
-
-    /**
-     * 歌词整体的垂直偏移值
-     */
-    open val startOffset: Float
-        get() = height.toFloat() / 2f + horizontalOffset
 
     /**
      * 在主线程中运行
@@ -922,23 +983,33 @@ open class LyricViewX : View, LyricViewXInterface, ProgressKeeper {
     }
 
     override fun setDampingRatioForLyric(dampingRatio: Float) {
-        springScroller.spring.dampingRatio = dampingRatio
+        progressSpringAnimator.spring.dampingRatio = dampingRatio
     }
 
     override fun setDampingRatioForViewPort(dampingRatio: Float) {
-        springScrollerForViewPort.spring.dampingRatio = dampingRatio
+        viewPortSpringAnimator.spring.dampingRatio = dampingRatio
     }
 
     override fun setStiffnessForLyric(stiffness: Float) {
-        springScroller.spring.stiffness = stiffness
+        progressSpringAnimator.spring.stiffness = stiffness
     }
 
     override fun setStiffnessForViewPort(stiffness: Float) {
-        springScrollerForViewPort.spring.stiffness = stiffness
+        viewPortSpringAnimator.spring.stiffness = stiffness
     }
 
     override fun setPlayDrawable(drawable: Drawable) {
         playDrawable = drawable
+    }
+
+    override fun setIsDrawTranslation(isDrawTranslation: Boolean) {
+        this.isDrawTranslation.value = isDrawTranslation
+        invalidate()
+    }
+
+    override fun setIsEnableBlurEffect(isEnableBlurEffect: Boolean) {
+        this.isEnableBlurEffect.value = isEnableBlurEffect
+        invalidate()
     }
 
     companion object {
