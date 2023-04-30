@@ -38,7 +38,7 @@ android {
 }
 
 dependencies {
-    api "com.github.cy745:EaseView:177f48b954"
+    api "com.github.cy745:EaseView:e11c3208a9"
 
     implementation "androidx.dynamicanimation:dynamicanimation-ktx:1.0.0-alpha03"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
