@@ -117,7 +117,9 @@ class MainActivity : AppCompatActivity() {
         lyricViewX.setNormalTextSize(80f)
         lyricViewX.setCurrentTextSize(100f)
         lyricViewX.setTranslateTextScaleValue(0.8f)
-        lyricViewX.setHorizontalOffset(-200f)
+        lyricViewX.setHorizontalOffset(-50f)
+        lyricViewX.setHorizontalOffsetPercent(0.5f)
+        lyricViewX.setItemOffsetPercent(0.5f)
 
         var position = 0L
         lyricViewX.setDraggable(true, object : OnPlayClickListener {

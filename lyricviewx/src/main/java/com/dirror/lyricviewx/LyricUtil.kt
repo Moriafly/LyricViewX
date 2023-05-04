@@ -268,7 +268,9 @@ object LyricUtil {
     /**
      * 简单的插值函数
      */
-    fun lerp(a: Float, b: Float, f: Float) = (1 - f) * a + b * f
+    fun lerp(from: Float, to: Float, fraction: Float): Float {
+        return from + (to - from) * fraction
+    }
 
     /**
      * 判断MotionEvent是否发生在Rect中

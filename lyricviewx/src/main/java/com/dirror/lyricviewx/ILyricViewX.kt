@@ -43,10 +43,21 @@ interface LyricViewXInterface {
     fun setTranslateDividerHeight(@Px height: Float)
 
     /**
-     * 设置歌词整体的垂直偏移值
+     * 设置歌词整体的垂直偏移值，配合[setHorizontalOffsetPercent]使用
      * @param offset px
+     *
+     * @see [setHorizontalOffsetPercent]
      */
     fun setHorizontalOffset(@Px offset: Float)
+
+    /**
+     * 设置歌词整体的垂直偏移，相对于控件高度的百分比,0.5f即表示居中，配合[setHorizontalOffset]使用
+     *
+     * @param percent 0.0f ~ 1.0f
+     *
+     * @see [setHorizontalOffset]
+     */
+    fun setHorizontalOffsetPercent(@FloatRange(from = 0.0, to = 1.0) percent: Float)
 
     /**
      * 设置翻译相对与原词之间的缩放比例值
@@ -217,6 +228,13 @@ interface LyricViewXInterface {
      * 是否开启特定的模糊效果
      */
     fun setIsEnableBlurEffect(isEnableBlurEffect: Boolean)
+
+    /**
+     * 设置元素的偏移百分比，0.5f即表示居中
+     *
+     * @param itemOffsetPercent 0f ~ 1f 偏移百分比
+     */
+    fun setItemOffsetPercent(@FloatRange(from = 0.0, to = 1.0) itemOffsetPercent: Float)
 }
 
 /**

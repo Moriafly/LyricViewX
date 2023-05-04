@@ -43,15 +43,18 @@ import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.widget.Scroller
+import androidx.annotation.FloatRange
 import androidx.core.content.ContextCompat
 import androidx.dynamicanimation.animation.SpringForce
+import androidx.dynamicanimation.animation.springAnimationOf
+import androidx.dynamicanimation.animation.withSpringForceProperties
 import com.dirror.lyricviewx.LyricUtil.calcScaleValue
 import com.dirror.lyricviewx.LyricUtil.formatTime
 import com.dirror.lyricviewx.LyricUtil.insideOf
+import com.dirror.lyricviewx.LyricUtil.lerp
 import com.dirror.lyricviewx.LyricUtil.lerpColor
 import com.dirror.lyricviewx.LyricUtil.normalize
 import com.dirror.lyricviewx.extension.BlurMaskFilterExt
-import com.dirror.lyricviewx.extension.SpringExt
 import com.lalilu.easeview.EaseView
 import com.lalilu.easeview.animatevalue.BoolValue
 import com.lalilu.easeview.animatevalue.FloatListAnimateValue
@@ -122,6 +125,8 @@ open class LyricViewX : EaseView, LyricViewXInterface {
     private var isFling = false
     private var textGravity = GRAVITY_CENTER // 歌词显示位置，靠左 / 居中 / 靠右
     private var horizontalOffset: Float = 0f
+    private var horizontalOffsetPercent: Float = 0.5f
+    private var itemOffsetPercent: Float = 0.5f
     private var dampingRatioForLyric: Float = SpringForce.DAMPING_RATIO_LOW_BOUNCY
     private var dampingRatioForViewPort: Float = SpringForce.DAMPING_RATIO_NO_BOUNCY
     private var stiffnessForLyric: Float = SpringForce.STIFFNESS_LOW
@@ -160,7 +165,7 @@ open class LyricViewX : EaseView, LyricViewXInterface {
      * 歌词整体的垂直偏移值
      */
     open val startOffset: Float
-        get() = height.toFloat() / 2f + horizontalOffset
+        get() = height.toFloat() * horizontalOffsetPercent + horizontalOffset
 
 
     /**
@@ -173,28 +178,26 @@ open class LyricViewX : EaseView, LyricViewXInterface {
     private var animateTargetOffset = 0f        // 动画目标Offset
     private var animateStartOffset = 0f         // 动画起始Offset
 
-    private val viewPortSpringAnimator = SpringExt.of(this)
-        .setDampingRatio(dampingRatioForViewPort)
-        .setStiffness(stiffnessForViewPort)
-        .setDefaultValue(0f)
-        .onGet { mViewPortOffset }
-        .onSet { value ->
+    private val viewPortSpringAnimator = springAnimationOf(
+        getter = { mViewPortOffset },
+        setter = { value ->
             if (!isShowTimeline.value && !isTouching && !isFling) {
                 mViewPortOffset = value
                 invalidate()
             }
         }
-        .build()
+    ).withSpringForceProperties {
+        dampingRatio = dampingRatioForViewPort
+        stiffness = stiffnessForViewPort
+        finalPosition = 0f
+    }
 
     /**
      * 弹性动画Scroller
      */
-    private val progressSpringAnimator = SpringExt.of(this)
-        .setDampingRatio(dampingRatioForLyric)
-        .setStiffness(stiffnessForLyric)
-        .setDefaultValue(0f)
-        .onGet { mCurrentOffset }
-        .onSet { value ->
+    private val progressSpringAnimator = springAnimationOf(
+        getter = { mCurrentOffset },
+        setter = { value ->
             animateProgress = normalize(animateStartOffset, animateTargetOffset, value)
             mCurrentOffset = value
 
@@ -203,7 +206,11 @@ open class LyricViewX : EaseView, LyricViewXInterface {
             }
             invalidate()
         }
-        .build()
+    ).withSpringForceProperties {
+        dampingRatio = dampingRatioForLyric
+        stiffness = stiffnessForLyric
+        finalPosition = 0f
+    }
 
     @SuppressLint("CustomViewStyleable")
     private fun init(attrs: AttributeSet?) {
@@ -236,12 +243,8 @@ open class LyricViewX : EaseView, LyricViewXInterface {
             R.styleable.LyricView_lrcTimelineTextColor,
             ContextCompat.getColor(context, R.color.lrc_timeline_text_color)
         )
-        defaultLabel = typedArray.getString(R.styleable.LyricView_lrcLabel).toString()
-        defaultLabel = if (defaultLabel.isNullOrEmpty()) {
-            "暂无歌词"
-        } else {
-            defaultLabel
-        }
+        defaultLabel = typedArray.getString(R.styleable.LyricView_lrcLabel)
+        defaultLabel = if (defaultLabel.isNullOrEmpty()) "暂无歌词" else defaultLabel
         lrcPadding = typedArray.getDimension(R.styleable.LyricView_lrcPadding, 0f)
         timelineColor = typedArray.getColor(
             R.styleable.LyricView_lrcTimelineColor,
@@ -267,6 +270,9 @@ open class LyricViewX : EaseView, LyricViewXInterface {
         textGravity = typedArray.getInteger(R.styleable.LyricView_lrcTextGravity, GRAVITY_CENTER)
         translateTextScaleValue = typedArray.getFloat(R.styleable.LyricView_lrcTranslateTextScaleValue, 1f)
         horizontalOffset = typedArray.getDimension(R.styleable.LyricView_lrcHorizontalOffset, 0f)
+        horizontalOffsetPercent = typedArray.getDimension(R.styleable.LyricView_lrcHorizontalOffsetPercent, 0.5f)
+        itemOffsetPercent = typedArray.getDimension(R.styleable.LyricView_lrcItemOffsetPercent, 0.5f)
+        isDrawTranslation = typedArray.getBoolean(R.styleable.LyricView_lrcIsDrawTranslation, false)
         typedArray.recycle()
         drawableWidth = resources.getDimension(R.dimen.lrc_drawable_width).toInt()
         timeTextWidth = resources.getDimension(R.dimen.lrc_time_width).toInt()
@@ -313,30 +319,61 @@ open class LyricViewX : EaseView, LyricViewXInterface {
     private val isEnableBlurEffect = BoolValue().also(::registerValue)
     private val progressKeeper = FloatListAnimateValue().also(::registerValue)
     private val blurProgressKeeper = FloatListAnimateValue().also(::registerValue)
-    private val isDrawTranslation = BoolValue(precision = 0.001f, stepPercent = 0.05f).also(::registerValue)
 
     private val heightKeeper = LinkedHashMap<Int, Float>()
     private val offsetKeeper = LinkedHashMap<Int, Float>()
+    private val minOffsetKeeper = LinkedHashMap<Int, Float>()
+    private val maxOffsetKeeper = LinkedHashMap<Int, Float>()
+
+    private var viewPortStartOffset: Float = 0f
+    private var isDrawTranslationValue = 0f
+    private var isDrawTranslation: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            viewPortStartOffset = mViewPortOffset
+            isDrawTranslationAnimator.animateToFinalPosition(if (value) 1000f else 0f)
+        }
+    private val isDrawTranslationAnimator = springAnimationOf(
+        getter = { isDrawTranslationValue * 1000f },
+        setter = {
+            isDrawTranslationValue = it / 1000f
+
+            if (!isTouching && !isFling) {
+                viewPortSpringAnimator.cancel()
+
+                val targetOffset = if (isDrawTranslation) getMaxOffset(focusLine) else getMinOffset(focusLine)
+                val animateValue = if (isDrawTranslation) isDrawTranslationValue else 1f - isDrawTranslationValue
+
+                mViewPortOffset = lerp(viewPortStartOffset, targetOffset, animateValue)
+            }
+            invalidate()
+        },
+    ).withSpringForceProperties {
+        dampingRatio = SpringForce.DAMPING_RATIO_NO_BOUNCY
+        stiffness = SpringForce.STIFFNESS_LOW
+        finalPosition = if (isDrawTranslation) 1000f else 0f
+    }
 
     override fun onPreDraw(canvas: Canvas): Boolean {
-        val centerY = startOffset
-
         // 无歌词，只渲染一句无歌词的提示语句
         if (!hasLrc()) {
             lyricPaint.color = currentTextColor
-            val staticLayout = LyricEntry.createStaticLayout(
+            lyricPaint.textSize = normalTextSize
+            LyricEntry.createStaticLayout(
                 defaultLabel,
                 lyricPaint,
                 lrcWidth,
                 Layout.Alignment.ALIGN_CENTER
-            ) ?: return false
-            drawText(
-                canvas = canvas,
-                staticLayout = staticLayout,
-                calcHeightOnly = false,
-                yOffset = centerY,
-                yClipPercentage = 1f
-            )
+            )?.let {
+                drawText(
+                    canvas = canvas,
+                    staticLayout = it,
+                    calcHeightOnly = false,
+                    yOffset = startOffset,
+                    yClipPercentage = 1f
+                )
+            }
             return false
         }
         return super.onPreDraw(canvas)
@@ -373,10 +410,11 @@ open class LyricViewX : EaseView, LyricViewXInterface {
             canvas.drawText(timeText, timeX, timeY, timePaint)
         }
 
-        // TODO 待解决绘制高度变化时 mViewPortOffset 不同步的问题
         canvas.translate(0f, mViewPortOffset)
 
         var yOffset = 0f
+        var yMinOffset = 0f
+        var yMaxOffset = 0f
         var scaleValue: Float
         var progress: Float
         var radius: Int
@@ -431,10 +469,16 @@ open class LyricViewX : EaseView, LyricViewXInterface {
                 calcHeightOnly = calcHeightOnly,
                 yOffset = yOffset,
                 scaleValue = scaleValue,
-                blurRadius = radius
-            )
+                blurRadius = radius,
+            ) { minHeight, maxHeight ->
+                minOffsetKeeper[i] = yMinOffset + calcOffsetOfItem(minHeight, sentenceDividerHeight)
+                yMinOffset += minHeight
+
+                maxOffsetKeeper[i] = yMaxOffset + calcOffsetOfItem(maxHeight, sentenceDividerHeight)
+                yMaxOffset += maxHeight
+            }
             heightKeeper[i] = itemHeight
-            offsetKeeper[i] = yOffset + (itemHeight - sentenceDividerHeight) / 2
+            offsetKeeper[i] = yOffset + calcOffsetOfItem(itemHeight, sentenceDividerHeight)
             yOffset += itemHeight
         }
         return super.onDoDraw(canvas)
@@ -456,9 +500,13 @@ open class LyricViewX : EaseView, LyricViewXInterface {
         calcHeightOnly: Boolean,
         yOffset: Float,
         scaleValue: Float,
-        blurRadius: Int
+        blurRadius: Int,
+        callback: (minHeight: Float, maxHeight: Float) -> Unit = { _, _ -> }
     ): Float {
         var tempHeight = 0f
+        var minTempHeight = 0f
+        var maxTempHeight = 0f
+
         entry.staticLayout?.let {
             tempHeight += drawText(
                 canvas = canvas,
@@ -469,21 +517,31 @@ open class LyricViewX : EaseView, LyricViewXInterface {
                 scale = scaleValue,
                 blurRadius = blurRadius
             )
+            minTempHeight = tempHeight
+            maxTempHeight = tempHeight
+
             entry.secondStaticLayout?.let { second ->
-                tempHeight += translateDividerHeight * isDrawTranslation.animateValue
+                tempHeight += translateDividerHeight * isDrawTranslationValue
+                maxTempHeight += translateDividerHeight
+
                 tempHeight += drawText(
                     canvas = canvas,
                     staticLayout = second,
                     calcHeightOnly = calcHeightOnly,
                     yOffset = yOffset + tempHeight,
-                    yClipPercentage = isDrawTranslation.animateValue,
-                    alpha = isDrawTranslation.animateValue,
+                    yClipPercentage = isDrawTranslationValue,
+                    alpha = isDrawTranslationValue,
                     scale = scaleValue,
                     blurRadius = blurRadius
-                )
+                ) { _, max ->
+                    maxTempHeight += max
+                }
             }
             tempHeight += sentenceDividerHeight
+            minTempHeight += sentenceDividerHeight
+            maxTempHeight += sentenceDividerHeight
         }
+        callback(minTempHeight, maxTempHeight)
         return tempHeight
     }
 
@@ -504,13 +562,21 @@ open class LyricViewX : EaseView, LyricViewXInterface {
         staticLayout: StaticLayout,
         calcHeightOnly: Boolean = false,
         yOffset: Float,
-        yClipPercentage: Float,
+        @FloatRange(from = 0.0, to = 1.0)
+        yClipPercentage: Float = 1f,
         scale: Float = 1f,
         alpha: Float = 1f,
-        blurRadius: Int = 0
+        blurRadius: Int = 0,
+        callback: (minHeight: Float, maxHeight: Float) -> Unit = { _, _ -> }
     ): Float {
-        if (staticLayout.lineCount == 0) return 0f
-        if (calcHeightOnly) return staticLayout.height * yClipPercentage
+        if (staticLayout.lineCount == 0) {
+            callback(0f, 0f)
+            return 0f
+        }
+        if (calcHeightOnly) {
+            callback(0f, staticLayout.height.toFloat())
+            return staticLayout.height * yClipPercentage
+        }
         val lineHeight = staticLayout.height.toFloat() / staticLayout.lineCount.toFloat()
 
         var yTemp = 0f                  // y轴临时偏移量
@@ -551,6 +617,7 @@ open class LyricViewX : EaseView, LyricViewXInterface {
             yTemp += itemActualHeight
             actualHeight += itemActualHeight
         }
+        callback(0f, staticLayout.height.toFloat())
         return actualHeight
     }
 
@@ -635,7 +702,7 @@ open class LyricViewX : EaseView, LyricViewXInterface {
                 if (onPlayClickListener?.onPlayClick(centerLineTime) == true) {
                     isShowTimeline.value = false
                     removeCallbacks(hideTimelineRunnable)
-                    viewPortSpringAnimator.animateToFinalPosition(getOffset(centerLine))
+                    smoothScrollTo(centerLine)
                     invalidate()
                     return true
                 }
@@ -646,7 +713,6 @@ open class LyricViewX : EaseView, LyricViewXInterface {
     private val hideTimelineRunnable = Runnable {
         if (hasLrc() && isShowTimeline.value) {
             isShowTimeline.value = false
-            viewPortSpringAnimator.animateToFinalPosition(mCurrentOffset)
             smoothScrollTo(currentLine)
         }
     }
@@ -728,7 +794,7 @@ open class LyricViewX : EaseView, LyricViewXInterface {
      * 将中心行微调至正中心
      */
     private fun adjustCenter() {
-        viewPortSpringAnimator.animateToFinalPosition(mCurrentOffset)
+        smoothScrollTo(currentLine)
     }
 
     /**
@@ -765,6 +831,20 @@ open class LyricViewX : EaseView, LyricViewXInterface {
     }
 
     /**
+     * 计算单个歌词元素的偏移量，用于控制歌词对其中线的位置
+     *
+     * 计算出来的歌词高度包含了分割线的高度，所以需要减去分割线的高度
+     *
+     * @param itemHeight        歌词元素的高度
+     * @param dividerHeight     分割线的高度
+     *
+     * @return 歌词元素的偏移量
+     */
+    protected open fun calcOffsetOfItem(itemHeight: Float, dividerHeight: Float): Float {
+        return (itemHeight - dividerHeight) * itemOffsetPercent
+    }
+
+    /**
      * 因为添加了 [translateDividerHeight] 用来间隔开歌词与翻译，
      * 所以直接从 [LyricEntry] 获取高度不可行，
      * 故使用该 [getLyricHeight] 方法来计算 [LyricEntry] 的高度
@@ -783,6 +863,14 @@ open class LyricViewX : EaseView, LyricViewXInterface {
      */
     private fun getOffset(line: Int): Float {
         return startOffset - (offsetKeeper[line] ?: 0f)
+    }
+
+    private fun getMinOffset(line: Int): Float {
+        return startOffset - (minOffsetKeeper[line] ?: 0f)
+    }
+
+    private fun getMaxOffset(line: Int): Float {
+        return startOffset - (maxOffsetKeeper[line] ?: 0f)
     }
 
     /**
@@ -820,7 +908,12 @@ open class LyricViewX : EaseView, LyricViewXInterface {
     override fun setHorizontalOffset(offset: Float) {
         horizontalOffset = offset
         initPlayDrawable()
-        initEntryList()
+        postInvalidate()
+    }
+
+    override fun setHorizontalOffsetPercent(percent: Float) {
+        horizontalOffsetPercent = percent
+        initPlayDrawable()
         postInvalidate()
     }
 
@@ -978,23 +1071,26 @@ open class LyricViewX : EaseView, LyricViewXInterface {
     override fun setLyricTypeface(typeface: Typeface?) {
         lyricPaint.typeface = typeface
         secondLyricPaint.typeface = typeface
-
-        invalidate()
+        postInvalidate()
     }
 
     override fun setDampingRatioForLyric(dampingRatio: Float) {
+        dampingRatioForLyric = dampingRatio
         progressSpringAnimator.spring.dampingRatio = dampingRatio
     }
 
     override fun setDampingRatioForViewPort(dampingRatio: Float) {
+        dampingRatioForViewPort = dampingRatio
         viewPortSpringAnimator.spring.dampingRatio = dampingRatio
     }
 
     override fun setStiffnessForLyric(stiffness: Float) {
+        stiffnessForLyric = stiffness
         progressSpringAnimator.spring.stiffness = stiffness
     }
 
     override fun setStiffnessForViewPort(stiffness: Float) {
+        stiffnessForViewPort = stiffness
         viewPortSpringAnimator.spring.stiffness = stiffness
     }
 
@@ -1003,13 +1099,18 @@ open class LyricViewX : EaseView, LyricViewXInterface {
     }
 
     override fun setIsDrawTranslation(isDrawTranslation: Boolean) {
-        this.isDrawTranslation.value = isDrawTranslation
-        invalidate()
+        this.isDrawTranslation = isDrawTranslation
+        postInvalidate()
     }
 
     override fun setIsEnableBlurEffect(isEnableBlurEffect: Boolean) {
         this.isEnableBlurEffect.value = isEnableBlurEffect
-        invalidate()
+        postInvalidate()
+    }
+
+    override fun setItemOffsetPercent(itemOffsetPercent: Float) {
+        this.itemOffsetPercent = itemOffsetPercent
+        postInvalidate()
     }
 
     companion object {
