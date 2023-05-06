@@ -133,18 +133,22 @@ object LyricUtil {
      * 从文本解析歌词
      */
     private fun parseLrc(lrcText: String): List<LyricEntry>? {
-        var lyricText = lrcText
-        if (TextUtils.isEmpty(lyricText)) {
-            return null
-        }
+        var lyricText = lrcText.trim()
+        if (TextUtils.isEmpty(lyricText)) return null
+
         if (lyricText.startsWith("\uFEFF")) {
             lyricText = lyricText.replace("\uFEFF", "")
         }
+
+        // 针对传入 Language="Media Monkey Format"; Lyrics="......"; 的情况
+        lyricText = lyricText.substringAfter("Lyrics=\"")
+            .substringBeforeLast("\";")
+
         val entryList: MutableList<LyricEntry> = ArrayList()
         val array = lyricText.split("\\n".toRegex()).toTypedArray()
         for (line in array) {
             val list = parseLine(line)
-            if (list != null && !list.isEmpty()) {
+            if (!list.isNullOrEmpty()) {
                 entryList.addAll(list)
             }
         }
@@ -195,16 +199,16 @@ object LyricUtil {
         if (!lineMatcher.matches()) {
             return null
         }
-        val times = lineMatcher.group(1)
-        val text = lineMatcher.group(3)
+        val times = lineMatcher.group(1)!!
+        val text = lineMatcher.group(3)!!
         val entryList: MutableList<LyricEntry> = ArrayList()
 
         // [00:17.65]
         val timeMatcher = PATTERN_TIME.matcher(times)
         while (timeMatcher.find()) {
-            val min = timeMatcher.group(1).toLong()
-            val sec = timeMatcher.group(2).toLong()
-            val milString = timeMatcher.group(3)
+            val min = timeMatcher.group(1)!!.toLong()
+            val sec = timeMatcher.group(2)!!.toLong()
+            val milString = timeMatcher.group(3)!!
             var mil = milString.toLong()
             // 如果毫秒是两位数，需要乘以 10，when 新增支持 1 - 6 位毫秒，很多获取的歌词存在不同的毫秒位数
             when (milString.length) {
@@ -264,7 +268,9 @@ object LyricUtil {
     /**
      * 简单的插值函数
      */
-    fun lerp(a: Float, b: Float, f: Float) = (1 - f) * a + b * f
+    fun lerp(from: Float, to: Float, fraction: Float): Float {
+        return from + (to - from) * fraction
+    }
 
     /**
      * 判断MotionEvent是否发生在Rect中

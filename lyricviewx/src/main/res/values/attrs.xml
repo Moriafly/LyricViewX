@@ -23,5 +23,8 @@
         </attr>
         <attr name="lrcTranslateTextScaleValue" format="float" />
         <attr name="lrcHorizontalOffset" format="dimension" />
+        <attr name="lrcHorizontalOffsetPercent" format="float" />
+        <attr name="lrcItemOffsetPercent" format="float" />
+        <attr name="lrcIsDrawTranslation" format="boolean" />
     </declare-styleable>
 </resources>

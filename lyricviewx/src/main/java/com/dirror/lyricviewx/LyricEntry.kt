@@ -27,6 +27,7 @@ class LyricEntry(val time: Long, val text: String) : Comparable<LyricEntry> {
     var secondStaticLayout: StaticLayout? = null
         private set
 
+    @Deprecated("存在不显示翻译的情况，会导致offset发生改变，故不再固定存储offset")
     /**
      * 歌词距离视图顶部的距离
      */
